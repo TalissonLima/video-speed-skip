@@ -29,7 +29,7 @@ python3 scripts/build.py   # → dist/*.zip for Chrome and Firefox
 ```
 
 Before publishing, edit `src/shared/config.js` (Buy Me a Coffee, PIX key, repo URL)
-and the Firefox add-on id in `scripts/build.py`.
+and the Firefox add-on id in `scripts/build.py` if you fork it.
 
 ## Privacy
 

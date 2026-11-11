@@ -18,7 +18,7 @@ for target in ("chrome", "firefox"):
     if target == "firefox":
         m["browser_specific_settings"] = {
             "gecko": {
-                "id": "video-speed-skip@example.com",  # TODO: change to your own id
+                "id": "video-speed-skip@talissonlima.github.io",
                 "strict_min_version": "115.0",
                 "data_collection_permissions": {"required": ["none"]},
             }
