@@ -17,6 +17,21 @@
     return e;
   };
 
+  const TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg>';
+  function removeButton(onClick) {
+    const btn = el("button", "x");
+    btn.innerHTML = TRASH;
+    btn.title = t("remove");
+    btn.setAttribute("aria-label", t("remove"));
+    btn.onclick = onClick;
+    return btn;
+  }
+  const valueGroup = (input, unit) => {
+    const g = el("span", "valwrap");
+    g.append(input, el("span", "unit", unit));
+    return g;
+  };
+
   /* ---- saving + feedback ---- */
   let toastTimer;
   function toast(msg = t("saved")) {
@@ -55,9 +70,18 @@
     const id = SECTIONS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
     $$("[data-section]").forEach((s) => (s.hidden = s.id !== id));
     $$("[data-nav]").forEach((a) => a.classList.toggle("on", a.dataset.nav === id));
+    scrollTo(0, 0);
     if (id === "dashboard") renderDashboard();
   }
   addEventListener("hashchange", route);
+  addEventListener("popstate", route);
+  $$("[data-nav]").forEach((a) => {
+    a.onclick = (e) => {
+      e.preventDefault(); // no anchor jump: the page always starts at the top of the section
+      history.pushState(null, "", "#" + a.dataset.nav);
+      route();
+    };
+  });
 
   /* ================================================================== *
    * Dashboard
@@ -98,6 +122,9 @@
     if (!max) {
       chart.append(el("div", "empty", t("noData")));
     } else {
+      const grid = el("div", "gridline");
+      grid.append(el("span", "", fmtV(max)));
+      chart.append(grid);
       keys.forEach((k, i) => {
         const col = el("div", "col" + (i === keys.length - 1 ? " today" : ""));
         col.title = `${k} · ${fmtV(vals[i])}`;
@@ -105,11 +132,15 @@
         const bar = el("div", "bar" + (vals[i] ? "" : " zero"));
         bar.style.height = vals[i] ? Math.max(3, (vals[i] / max) * 100) + "%" : "2px";
         wrap.append(bar);
+        const date = new Date(k + "T00:00");
+        const monthMark = i === 0 || date.getDate() === 1; // show the month where it changes
         const label = el("small", "",
           range === 7
-            ? new Date(k + "T00:00").toLocaleDateString(ui.LOCALES[lang], { weekday: "short" })
-            : String(Number(k.slice(8))));
-        if (range > 14 && i % 3 !== 0) label.style.visibility = "hidden";
+            ? date.toLocaleDateString(ui.LOCALES[lang], { weekday: "short" })
+            : monthMark
+              ? date.toLocaleDateString(ui.LOCALES[lang], { day: "numeric", month: "short" })
+              : String(date.getDate()));
+        if (range > 14 && i % 3 !== 0 && !monthMark) label.style.visibility = "hidden";
         col.append(wrap, label);
         chart.append(col);
       });
@@ -201,19 +232,16 @@
       val.min = "0.05";
       val.step = "0.05";
       val.value = s.value;
-      val.style.visibility = s.action === "toggleSkip" ? "hidden" : "";
       val.oninput = () => {
         const n = Number(val.value);
         if (n > 0) { s.value = n; saveShortcuts(); }
       };
+      const group = valueGroup(val, ACTIONS[s.action][2]);
+      group.style.visibility = s.action === "toggleSkip" ? "hidden" : "";
 
-      const unit = el("span", "unit", ACTIONS[s.action][2]);
-      const del = el("button", "x", "×");
-      del.title = t("remove");
-      del.setAttribute("aria-label", t("remove"));
-      del.onclick = () => { cfg.shortcuts.splice(i, 1); saveShortcuts(); renderShortcuts(); };
+      const del = removeButton(() => { cfg.shortcuts.splice(i, 1); saveShortcuts(); renderShortcuts(); });
 
-      row.append(key, sel, val, unit, del);
+      row.append(key, sel, group, del);
       wrap.append(row, el("div", "sc-hint", t(ACTIONS[s.action][1])));
       box.append(wrap);
     });
@@ -255,16 +283,13 @@
         if (!Number.isFinite(n) || n <= 0) { input.value = cfg.siteSpeeds[host]; return; }
         save({ siteSpeeds: { ...cfg.siteSpeeds, [host]: clampSpeed(n) } });
       };
-      const del = el("button", "x", "×");
-      del.title = t("remove");
-      del.setAttribute("aria-label", t("remove"));
-      del.onclick = () => {
+      const del = removeButton(() => {
         const next = { ...cfg.siteSpeeds };
         delete next[host];
         save({ siteSpeeds: next });
         renderSpeed();
-      };
-      row.append(el("span", "name", host), input, el("span", "muted-text", "×"), del);
+      });
+      row.append(el("span", "name", host), valueGroup(input, "×"), del);
       list.append(row);
     });
   }

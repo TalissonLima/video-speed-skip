@@ -52,4 +52,4 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 0 0 8px; }
 
 /* support */
 .support { display: flex; gap: 8px; }
-.support .btn { flex: 1; }
+.support .btn { flex: 1; padding: 8px 6px; font-size: 12px; white-space: nowrap; }
