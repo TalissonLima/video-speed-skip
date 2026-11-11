@@ -161,7 +161,7 @@ def main():
                   time: v.currentTime, duration: v.duration};
         """
 
-        seed(ff)  # fallback off (default)
+        seed(ff, extra="adSkipFallback: false,")  # the fallback is on by default now: switch it off here
         ff.go(f"{SITE}/fake-youtube.html?mode=strict")
         time.sleep(1.5)
         ff.run(PRELUDE + "await sleep(5500);")
