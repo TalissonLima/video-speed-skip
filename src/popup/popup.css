@@ -19,7 +19,7 @@ h1 { font-size: 15px; margin: 0; letter-spacing: -.01em; }
 header p { margin: 0; color: var(--muted); font-size: 11.5px; }
 
 .seg { display: flex; background: var(--chip); border-radius: 8px; padding: 2px; }
-.seg button { border: 0; background: none; color: var(--muted); font: 600 11px inherit; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.seg button { border: 0; background: none; color: var(--muted); font: 600 11px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
 .seg button.on { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); }
@@ -33,7 +33,7 @@ output { font: 700 34px/1 system-ui, sans-serif; font-variant-numeric: tabular-n
 
 input[type=range] { width: 100%; accent-color: var(--accent); margin: 0 0 8px; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.chips button { flex: 1; border: 0; background: var(--chip); color: var(--text); padding: 6px 0; border-radius: 8px; font: 600 12px inherit; cursor: pointer; }
+.chips button { flex: 1; border: 0; background: var(--chip); color: var(--text); padding: 6px 0; border-radius: 8px; font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; cursor: pointer; }
 .chips button:hover { background: color-mix(in srgb, var(--accent) 18%, var(--chip)); }
 .chips button.on { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
 
@@ -59,9 +59,9 @@ kbd { min-width: 24px; text-align: center; padding: 2px 6px; border-radius: 6px;
 .support { text-align: center; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--card)), color-mix(in srgb, var(--accent-2) 10%, var(--card))); }
 .support p { margin: 2px 0 10px; color: var(--muted); }
 .support .row { justify-content: center; }
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); font: 600 12.5px inherit; text-decoration: none; cursor: pointer; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); font: 600 12.5px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-decoration: none; cursor: pointer; }
 .btn.primary { background: #ffdd00; border-color: #e8c800; color: #1a1a1a; }
 .btn:hover { filter: brightness(.96); }
 .btn[hidden] { display: none; }
-.link { background: none; border: 0; color: var(--accent); cursor: pointer; font: 600 12px inherit; text-decoration: none; padding: 0; }
+.link { background: none; border: 0; color: var(--accent); cursor: pointer; font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-decoration: none; padding: 0; }
 .link.small { display: inline-block; margin-top: 10px; font-size: 11.5px; color: var(--muted); font-weight: 500; }
