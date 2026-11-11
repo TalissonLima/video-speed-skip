@@ -321,7 +321,13 @@
     });
   }
 
-  for (const key of ["autoSkip", "skipIntro", "adNormalSpeed", "overlay", "preservePitch"]) {
+  function renderNotice() {
+    $("#skipNotice").hidden = !(cfg.skipFails > 0);
+    $("#skipNoticeTitle").textContent = t("skipBlocked", { n: cfg.skipFails });
+  }
+  $("#clearFails").onclick = () => { save({ skipFails: 0 }); renderNotice(); };
+
+  for (const key of ["autoSkip", "skipIntro", "adNormalSpeed", "adSkipFallback", "overlay", "preservePitch"]) {
     const box = $("#" + key);
     box.checked = cfg[key];
     box.onchange = () => save({ [key]: box.checked });
@@ -353,7 +359,7 @@
    * Data: backup / restore / reset
    * ================================================================== */
   const EXPORT_KEYS = ["speed", "speedScope", "siteSpeeds", "presets", "shortcuts", "overlay", "overlayPos",
-    "overlaySize", "preservePitch", "autoSkip", "skipIntro", "adNormalSpeed", "lang", "disabledSites"];
+    "overlaySize", "preservePitch", "autoSkip", "skipIntro", "adNormalSpeed", "adSkipFallback", "lang", "disabledSites"];
   const ENUMS = { speedScope: ["site", "global"], overlayPos: ["tl", "tr", "bl", "br"], overlaySize: ["s", "m", "l"], lang: ["auto", ...ui.LANGS] };
 
   function sanitize(raw) {
@@ -445,6 +451,7 @@
     renderShortcuts();
     renderSpeed();
     renderPaused();
+    renderNotice();
     renderAppearance();
   }
 
@@ -457,7 +464,7 @@
     cfg.stats = { daily: {}, sites: {}, ...cfg.stats };
     if (!$("#dashboard").hidden) renderDashboard();
     if (!$("#speed").hidden) renderSpeed();
-    if (!$("#skip").hidden) renderPaused();
+    if (!$("#skip").hidden) { renderPaused(); renderNotice(); }
   });
 
   renderAll();

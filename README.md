@@ -4,7 +4,7 @@ Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencie
 
 - **Speed control** — any video, 0.1× to 16×, on-video badge (position and size configurable)
 - **Per-site speed** — each website remembers its own speed (or switch to one global speed)
-- **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" the moment the button appears
+- **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" the moment the button appears (see *Known limitations* for YouTube)
 - **Normal speed during ads** — ads play at 1× and your speed returns afterwards (YouTube ads are detected)
 - **Skip intros & recaps** (optional) — "Skip Intro" / "Skip Recap" on streaming sites
 - **Dashboard** — time saved and ads skipped per day and per site, on a full options page
@@ -21,6 +21,15 @@ an action and its value. Actions: slower, faster, set speed, **hold** (temporary
 | `S` / `D` | slower / faster (±0.1×) |
 | `R` | reset to 1× |
 | `Z` / `X` | back / forward 10 s |
+
+## Known limitations
+
+- **YouTube ignores clicks made by scripts.** Its Skip button only reacts to real user input (`event.isTrusted`), and
+  a browser extension can't fake that. The extension verifies every skip, only counts the ones that worked, and tells
+  you (popup + options) when the site ignored one. An opt-in, experimental setting (*Skipping → If the click is ignored,
+  jump to the end of the ad*) jumps **skippable** ads to their end instead; it never touches unskippable ads. The only way
+  to send a trusted click is Chrome's `debugger` permission, which we deliberately don't use.
+- Keyboard shortcuts don't work when the video is inside an iframe and the focus is on the outer page.
 
 ## Develop
 

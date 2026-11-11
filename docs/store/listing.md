@@ -29,7 +29,8 @@ Watch videos at the speed you like, and skip the ads for you.
 - Keeps voices natural at high speeds.
 
 **Skip ads**
-- Clicks "Skip Ad" the moment the button appears.
+- Clicks "Skip Ad" the moment the button appears, on sites that accept it.
+- YouTube ignores clicks made by scripts, so there the button can't always be pressed for you. An optional, experimental setting jumps skippable ads to their end instead, and the extension tells you when a skip was ignored.
 - Plays ads at normal speed and returns to your speed afterwards.
 - Optional: skips intros and recaps on streaming sites.
 
@@ -54,7 +55,8 @@ Assista aos vídeos na velocidade que você gosta, e deixe que a extensão pule 
 - Mantém as vozes naturais em velocidades altas.
 
 **Pular anúncios**
-- Clica em "Pular anúncio" assim que o botão aparece.
+- Clica em "Pular anúncio" assim que o botão aparece, nos sites que aceitam.
+- O YouTube ignora cliques feitos por scripts, então lá nem sempre dá para apertar o botão por você. Uma opção experimental leva os anúncios puláveis direto ao fim, e a extensão avisa quando um skip foi ignorado.
 - Toca os anúncios em velocidade normal e volta à sua velocidade depois.
 - Opcional: pula abertura e recapitulação em sites de streaming.
 
@@ -79,7 +81,8 @@ Mira los vídeos a la velocidad que prefieras y deja que la extensión salte los
 - Mantiene las voces naturales a altas velocidades.
 
 **Saltar anuncios**
-- Pulsa "Saltar anuncio" en cuanto aparece el botón.
+- Pulsa "Saltar anuncio" en cuanto aparece el botón, en los sitios que lo aceptan.
+- YouTube ignora los clics hechos por scripts, así que allí no siempre se puede pulsar el botón por ti. Una opción experimental lleva los anuncios saltables directamente al final, y la extensión avisa cuando un salto fue ignorado.
 - Reproduce los anuncios a velocidad normal y vuelve a tu velocidad después.
 - Opcional: salta intros y resúmenes en sitios de streaming.
 
@@ -122,6 +125,11 @@ Suggested captions:
 2. **Dashboard:** "See the time you save"
 3. **Shortcuts:** "Your keys, your speeds"
 4. **Speed:** "Each site remembers its speed"
+
+## What's new (0.4.1)
+
+- Fix: ad skips are now verified. A skip the site ignored is no longer counted; the popup and options page say so.
+- Optional (experimental): if YouTube ignores the click, jump a skippable ad to its end.
 
 ## What's new (0.4.0)
 

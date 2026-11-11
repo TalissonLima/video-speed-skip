@@ -114,6 +114,13 @@
       <h2 data-i18n="skTitle"></h2>
       <p class="sub" data-i18n="skSubtitle"></p>
 
+      <div class="panel notice" id="skipNotice" hidden>
+        <div class="row between gap wrap">
+          <div><b id="skipNoticeTitle"></b><small data-i18n="skipBlockedHelp"></small></div>
+          <button id="clearFails" class="link muted" data-i18n="skipBlockedClear"></button>
+        </div>
+      </div>
+
       <div class="panel">
         <label class="field">
           <div><b data-i18n="adSkip"></b><small data-i18n="adSkipDesc"></small></div>
@@ -126,6 +133,10 @@
         <label class="field">
           <div><b data-i18n="adNormal"></b><small data-i18n="adNormalDesc"></small></div>
           <input type="checkbox" id="adNormalSpeed" class="switch">
+        </label>
+        <label class="field">
+          <div><b data-i18n="skipFallback"></b><small data-i18n="skipFallbackDesc"></small></div>
+          <input type="checkbox" id="adSkipFallback" class="switch">
         </label>
       </div>
 

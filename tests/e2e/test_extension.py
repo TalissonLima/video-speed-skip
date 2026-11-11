@@ -36,7 +36,8 @@ SEED = """
 await browser.storage.local.clear();
 const k = (action, value, code, label) => ({action, value, code, label, ctrl: false, alt: false, shift: false});
 await browser.storage.local.set({
-  skipIntro: __SKIP_INTRO__,
+  skipIntro: __SKIP_INTRO__, __EXTRA__
+
   shortcuts: [k('slower', 0.1, 'KeyS', 'S'), k('faster', 0.1, 'KeyD', 'D'), k('setSpeed', 1, 'KeyR', 'R'),
               k('rewind', 10, 'KeyZ', 'Z'), k('forward', 10, 'KeyX', 'X'),
               k('hold', 3, 'KeyH', 'H'), k('toggle', 2, 'KeyT', 'T'), k('toggleSkip', 0, 'KeyK', 'K'), k('toggleSite', 0, 'KeyP', 'P')]
@@ -45,8 +46,12 @@ return true;
 """
 
 
-def seed(ff, skip_intro=False):
-    ff.ext_run(SEED.replace("__SKIP_INTRO__", "true" if skip_intro else "false"))
+def seed(ff, skip_intro=False, extra=""):
+    ff.ext_run(SEED.replace("__SKIP_INTRO__", "true" if skip_intro else "false").replace("__EXTRA__", extra))
+
+
+def stored(ff, keys):
+    return ff.ext_run("return await browser.storage.local.get(%s);" % keys)
 
 
 def main():
@@ -145,6 +150,40 @@ def main():
         """)
         check("intro button is clicked when enabled", r.get("intro", 0) >= 1, r)
         check("...but not unrelated buttons", "nope" not in r, r)
+
+        # ------------------------------------------------------------------ a site that ignores scripted clicks
+        print("Content script: a site that ignores scripted clicks (like YouTube)")
+        keys = "['skipCount', 'skipFails']"
+        STATE = PRELUDE + """
+          const v = document.getElementById('v');
+          return {clicks: window.__clicks, events: window.__events,
+                  adShowing: document.getElementById('player').classList.contains('ad-showing'),
+                  time: v.currentTime, duration: v.duration};
+        """
+
+        seed(ff)  # fallback off (default)
+        ff.go(f"{SITE}/fake-youtube.html?mode=strict")
+        time.sleep(1.5)
+        ff.run(PRELUDE + "await sleep(5500);")
+        r, s = ff.run(STATE), stored(ff, keys)
+        check("tries the click, then full pointer events", r["clicks"] >= 2 and any("pointerdown" in e for e in r["events"]), r)
+        check("a skip the site ignored is NOT counted", not s.get("skipCount"), s)
+        check("...it is reported as ignored instead", s.get("skipFails") == 1, s)
+
+        seed(ff, extra="adSkipFallback: true,")
+        ff.go(f"{SITE}/fake-youtube.html?mode=strict")
+        time.sleep(1.5)
+        ff.run(PRELUDE + "await sleep(6500);")
+        r, s = ff.run(STATE), stored(ff, keys)
+        check("fallback on: the skippable ad jumps to its end", not r["adShowing"] and r["time"] > r["duration"] - 1, r)
+        check("...and that skip is counted once", s.get("skipCount") == 1 and not s.get("skipFails"), s)
+
+        seed(ff)
+        ff.go(f"{SITE}/fake-youtube.html?mode=lenient")
+        time.sleep(1.5)
+        ff.run(PRELUDE + "await sleep(3000);")
+        r, s = ff.run(STATE), stored(ff, keys)
+        check("site that accepts the click: ad skipped and counted", not r["adShowing"] and s.get("skipCount") == 1 and not s.get("skipFails"), (r, s))
 
         # ------------------------------------------------------------------ lazy start
         print("Content script: stays idle until a video exists")

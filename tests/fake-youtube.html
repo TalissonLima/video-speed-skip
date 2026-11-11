@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Fake YouTube ad player</title>
+<!-- Used by tests/e2e. Imitates YouTube's skippable ad:
+       ?mode=strict   ignores clicks made by scripts (isTrusted === false), like YouTube does
+       ?mode=lenient  accepts any click
+     The ad ends (button hidden, "ad-showing" removed) when the button is accepted or the video reaches its end. -->
+<div id="player" class="html5-video-player ad-showing">
+  <video id="v" muted width="480" height="270" src="silence.wav"></video>
+  <button id="skip" class="ytp-skip-ad-button">Skip</button>
+</div>
+<script>
+  const mode = new URLSearchParams(location.search).get('mode') || 'strict';
+  const player = document.getElementById('player');
+  const skip = document.getElementById('skip');
+  const video = document.getElementById('v');
+  window.__clicks = 0;
+  window.__events = [];
+
+  const endAd = () => { player.classList.remove('ad-showing'); skip.hidden = true; };
+
+  for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup']) {
+    skip.addEventListener(type, (e) => window.__events.push(type + (e.isTrusted ? '' : '*'))); // * = made by a script
+  }
+  skip.addEventListener('click', (e) => {
+    window.__clicks++;
+    if (mode === 'lenient' || e.isTrusted) endAd();
+  });
+  for (const type of ['timeupdate', 'seeked', 'ended']) {
+    video.addEventListener(type, () => { if (video.duration && video.currentTime >= video.duration - 0.5) endAd(); });
+  }
+</script>

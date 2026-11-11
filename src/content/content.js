@@ -339,6 +339,60 @@
     el.click();
   }
 
+  // YouTube ignores clicks made by scripts (their events have isTrusted === false), so "we clicked"
+  // does not mean "the ad was skipped". Every ad skip is therefore verified before it is counted,
+  // and when the click is ignored we escalate: fuller pointer events, then (opt-in) jumping to the
+  // end of the ad. Only ever done while the Skip button is showing, i.e. when the ad is skippable.
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const gone = (btn) => !btn.isConnected || !visible(btn); // the button vanished: the ad moved on
+
+  function pointerClick(el) {
+    const r = el.getBoundingClientRect();
+    const init = { bubbles: true, cancelable: true, composed: true, view: window, button: 0,
+                   clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
+    for (const [Ctor, type] of [[PointerEvent, "pointerdown"], [MouseEvent, "mousedown"],
+                                [PointerEvent, "pointerup"], [MouseEvent, "mouseup"], [MouseEvent, "click"]]) {
+      el.dispatchEvent(new Ctor(type, init));
+    }
+  }
+
+  const adVideo = () =>
+    document.querySelector(".html5-video-player.ad-showing video, .html5-video-player.ad-interrupting video");
+
+  async function recordSkipFailure() {
+    try {
+      const { skipFails = 0 } = await api.storage.local.get("skipFails");
+      await VSS.save({ skipFails: skipFails + 1 });
+    } catch { /* extension was reloaded */ }
+  }
+
+  async function skipAd(btn) {
+    const onYouTube = adPlaying();
+    btn.__vssClickedAt = Date.now() + 6000; // keep other scans away from this button while we work on it
+    btn.click();
+    await wait(900);
+    if (gone(btn)) return recordStats({ ads: 1 });
+    if (!onYouTube) {                       // other sites: a click is all we can do
+      btn.__vssClickedAt = Date.now();
+      return;
+    }
+
+    pointerClick(btn);
+    await wait(900);
+    if (gone(btn)) return recordStats({ ads: 1 });
+
+    if (cfg.adSkipFallback) {
+      const v = adVideo();
+      if (v && Number.isFinite(v.duration) && v.duration > 0) {
+        v.currentTime = v.duration;
+        await wait(1200);
+        if (gone(btn) || !adPlaying()) return recordStats({ ads: 1 });
+      }
+    }
+    btn.__vssClickedAt = Date.now() + 18000; // don't hammer the same ad
+    recordSkipFailure();
+  }
+
   // Runs on DOM changes and once a second while the page has a video.
   function scan() {
     if (!active) return;
@@ -355,10 +409,7 @@
     if (!enabled()) return;
     if (cfg.autoSkip) {
       const btn = find(AD_SELECTORS, AD_TEXT);
-      if (btn) {
-        click(btn);
-        recordStats({ ads: 1 });
-      }
+      if (btn) skipAd(btn);
     }
     if (cfg.skipIntro) {
       const btn = find(INTRO_SELECTORS, INTRO_TEXT);

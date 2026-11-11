@@ -100,6 +100,10 @@ label.field { cursor: pointer; }
 .screen [data-pos=bl] { bottom: 8px; left: 8px; } .screen [data-pos=br] { bottom: 8px; right: 8px; }
 .screen .badge { position: absolute; pointer-events: none; font-weight: 700; color: #fff; background: rgba(17,17,27,.9); padding: .55em .8em; border-radius: .7em; border: 1px solid rgba(255,255,255,.18); line-height: 1; }
 
+.panel.notice { border-color: #f59e0b; background: color-mix(in srgb, #f59e0b 9%, var(--card)); }
+.notice b { display: block; margin-bottom: 2px; }
+.notice small { color: var(--muted); font-size: 12px; }
+
 textarea { width: 100%; height: auto; padding: 8px; font: 12px/1.4 ui-monospace, monospace; resize: vertical; margin: 4px 0 10px; }
 .support p { margin: 2px 0 12px; }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 10px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
