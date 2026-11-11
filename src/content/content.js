@@ -270,8 +270,7 @@
       const btn = find(AD_SELECTORS, AD_TEXT);
       if (btn) {
         click(btn);
-        cfg.skipCount += 1;
-        VSS.save({ skipCount: cfg.skipCount });
+        recordStats({ ads: 1 });
       }
     }
     if (cfg.skipIntro) {
@@ -309,11 +308,46 @@
     return best;
   }
 
+  const pad = (n) => String(n).padStart(2, "0");
+  const todayKey = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
+  // Lifetime totals + per-day and per-site breakdown for the dashboard. Always
+  // reads fresh values so several frames/tabs don't overwrite each other.
+  async function recordStats({ saved = 0, ads = 0 }) {
+    try {
+      const cur = await api.storage.local.get(["stats", "savedSeconds", "skipCount"]);
+      const st = cur.stats ?? {};
+      st.daily ??= {};
+      st.sites ??= {};
+      const r1 = (n) => Math.round(n * 10) / 10;
+      const day = (st.daily[todayKey()] ??= { s: 0, a: 0 });
+      const site = (st.sites[hostname()] ??= { s: 0, a: 0 });
+      day.s = r1(day.s + saved); day.a += ads;
+      site.s = r1(site.s + saved); site.a += ads;
+
+      const days = Object.keys(st.daily).sort(); // keep the last 90 days
+      while (days.length > 90) delete st.daily[days.shift()];
+      const hosts = Object.keys(st.sites);      // keep the 100 most relevant sites
+      if (hosts.length > 100) {
+        const score = (h) => st.sites[h].s + st.sites[h].a * 30;
+        hosts.sort((x, y) => score(x) - score(y)).slice(0, hosts.length - 100).forEach((h) => delete st.sites[h]);
+      }
+      await VSS.save({
+        stats: st,
+        savedSeconds: r1((cur.savedSeconds ?? 0) + saved),
+        skipCount: (cur.skipCount ?? 0) + ads
+      });
+    } catch { /* extension was reloaded while this page was open */ }
+  }
+
   function flushSaved() {
     if (pendingSaved <= 0) return;
-    cfg.savedSeconds = Math.round((cfg.savedSeconds + pendingSaved) * 10) / 10;
+    const saved = pendingSaved;
     pendingSaved = 0;
-    VSS.save({ savedSeconds: cfg.savedSeconds });
+    recordStats({ saved });
   }
 
   setInterval(() => {

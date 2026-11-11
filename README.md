@@ -6,10 +6,11 @@ Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencie
 - **Per-site speed** — each website remembers its own speed (or switch to one global speed)
 - **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" the moment the button appears
 - **Skip intros & recaps** (optional) — "Skip Intro" / "Skip Recap" on streaming sites
-- **Stats** — time saved by watching faster, and ads skipped
+- **Dashboard** — time saved and ads skipped per day and per site, on a full options page
+- **Simple popup** — pause the extension on a site, change speed, flip the main switches; everything else lives in the options page
 - **EN / PT / ES** interface, light/dark theme, per-site disable, settings backup (copy / paste)
 
-Keyboard shortcuts are **fully configurable** in the popup: pick any key (with Ctrl/Alt/Shift if you like),
+Keyboard shortcuts are **fully configurable** in the options page: pick any key (with Ctrl/Alt/Shift if you like),
 an action and its value. Actions: slower, faster, set speed, **hold** (temporary speed while the key is down),
 **toggle** (jump to a speed, press again to go back), ad skip on/off, rewind, forward. Defaults:
 

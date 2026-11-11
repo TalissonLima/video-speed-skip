@@ -20,7 +20,9 @@
     speedScope: "site",    // "site" (each domain remembers its own) | "global"
     siteSpeeds: {},        // hostname -> speed (only used in "site" scope)
     shortcuts: DEFAULT_SHORTCUTS,
-    overlay: true,         // show the on-video speed badge
+    presets: [1, 1.25, 1.5, 2, 3], // quick-speed buttons in the popup
+    stats: { daily: {}, sites: {} }, // dashboard data: daily[YYYY-MM-DD]={s,a}, sites[host]={s,a}
+    overlay: true,        // show the on-video speed badge
     overlayPos: "tl",      // tl | tr | bl | br
     overlaySize: "m",      // s | m | l
     preservePitch: true,   // keep voices natural at high speeds
@@ -39,7 +41,9 @@
     MIN: 0.1,
     MAX: 16,
     async load() {
-      return { ...DEFAULTS, ...(await api.storage.local.get(null)) };
+      const cfg = { ...DEFAULTS, ...(await api.storage.local.get(null)) };
+      cfg.stats = { daily: {}, sites: {}, ...cfg.stats };
+      return cfg;
     },
     save(patch) {
       return api.storage.local.set(patch);

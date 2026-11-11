@@ -4,11 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Video Speed &amp; Skip</title>
-  <link rel="stylesheet" href="../src/popup/popup.css"><script>
-const store={speed:1,siteSpeeds:{"www.youtube.com":1.5},skipCount:42,savedSeconds:5400};
-globalThis.chrome={storage:{local:{get:async()=>({...store}),set:async(x)=>Object.assign(store,x)},onChanged:{addListener(){}}},tabs:{query:async()=>[{url:"https://www.youtube.com/watch?v=demo"}]}};
-</script>
-</head>
+  <link rel="stylesheet" href="../src/shared/base.css">
+  <link rel="stylesheet" href="../src/popup/popup.css">
+<script>
+const day = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
+const daily = {}; [0,1,2,3,5,6,7,9,10,12,13].forEach((n, i) => daily[day(n)] = { s: 600 + ((i * 937) % 2400), a: (i * 3) % 7 });
+const store = {
+  speedScope: "site", siteSpeeds: { "www.youtube.com": 1.5, "vimeo.com": 1.25, "coursera.org": 2 },
+  skipCount: 128, savedSeconds: 19800, disabledSites: ["example.org"],
+  stats: { daily, sites: { "www.youtube.com": { s: 12000, a: 90 }, "coursera.org": { s: 5400, a: 0 }, "vimeo.com": { s: 1800, a: 12 }, "twitch.tv": { s: 600, a: 26 } } }
+};
+globalThis.chrome = {
+  storage: { local: { get: async () => ({ ...store }), set: async (x) => Object.assign(store, x), remove: async () => {} }, onChanged: { addListener() {} } },
+  tabs: { query: async () => [{ url: "https://www.youtube.com/watch?v=demo" }] },
+  runtime: { getManifest: () => ({ version: "0.3.0" }), openOptionsPage() {} }
+};
+</script></head>
 <body>
   <header>
     <div class="brand">
@@ -22,12 +33,16 @@ globalThis.chrome={storage:{local:{get:async()=>({...store}),set:async(x)=>Objec
         <p data-i18n="tagline"></p>
       </div>
     </div>
-    <div class="seg" role="group" aria-label="Language">
-      <button data-lang="en">EN</button>
-      <button data-lang="pt">PT</button>
-      <button data-lang="es">ES</button>
-    </div>
+    <button id="gear" class="icon-btn" data-i18n-title="openSettings">⚙</button>
   </header>
+
+  <section class="card site" id="siteBar">
+    <div class="site-info">
+      <span class="dot" id="dot"></span>
+      <div><b id="siteHost"></b><small id="siteState"></small></div>
+    </div>
+    <input type="checkbox" id="siteOn" class="switch">
+  </section>
 
   <section class="card" id="speedCard">
     <div class="row between">
@@ -43,100 +58,33 @@ globalThis.chrome={storage:{local:{get:async()=>({...store}),set:async(x)=>Objec
     <div class="chips" id="chips"></div>
   </section>
 
-  <section class="stats">
+  <div class="stats" id="stats" role="link" tabindex="0" data-i18n-title="viewDashboard">
     <div class="stat"><span class="ico" aria-hidden="true">⏱</span><div><b id="saved">0s</b><small data-i18n="timeSaved"></small></div></div>
     <div class="stat"><span class="ico" aria-hidden="true">⏭</span><div><b id="skipped">0</b><small data-i18n="adsSkippedLabel"></small></div></div>
-  </section>
+  </div>
 
   <section class="card list">
-    <label class="item">
-      <span><b data-i18n="adSkip"></b><small data-i18n="adSkipDesc"></small></span>
+    <label class="item" data-i18n-title="adSkipDesc">
+      <span><b data-i18n="adSkip"></b></span>
       <input type="checkbox" id="autoSkip" class="switch">
     </label>
-    <label class="item">
-      <span><b data-i18n="skipIntro"></b><small data-i18n="skipIntroDesc"></small></span>
+    <label class="item" data-i18n-title="skipIntroDesc">
+      <span><b data-i18n="skipIntro"></b></span>
       <input type="checkbox" id="skipIntro" class="switch">
-    </label>
-    <label class="item">
-      <span><b data-i18n="overlay"></b><small data-i18n="overlayDesc"></small></span>
-      <input type="checkbox" id="overlay" class="switch">
-    </label>
-    <label class="item">
-      <span><b data-i18n="disableSite"></b><small id="host"></small></span>
-      <input type="checkbox" id="disableSite" class="switch">
     </label>
   </section>
 
-  <details class="card">
-    <summary data-i18n="shortcuts"></summary>
-    <p class="hint" data-i18n="shortcutsHint"></p>
-    <div id="sc" class="scs"></div>
-    <div class="row between">
-      <button id="addSc" class="link" data-i18n="addShortcut"></button>
-      <button id="restoreSc" class="link muted" data-i18n="restoreDefaults"></button>
-    </div>
-  </details>
+  <p class="tip" id="tip"></p>
 
-  <details class="card">
-    <summary data-i18n="settings"></summary>
-    <div class="opt first">
-      <label for="scope" data-i18n="rememberSpeed"></label>
-      <select id="scope">
-        <option value="site" data-i18n="scopeSite"></option>
-        <option value="global" data-i18n="scopeGlobal"></option>
-      </select>
-    </div>
-    <div class="opt">
-      <span><b data-i18n="preservePitch"></b><small data-i18n="preservePitchDesc"></small></span>
-      <input type="checkbox" id="preservePitch" class="switch">
-    </div>
-    <div class="opt">
-      <label for="overlayPos" data-i18n="overlayPos"></label>
-      <select id="overlayPos">
-        <option value="tl" data-i18n="posTl"></option>
-        <option value="tr" data-i18n="posTr"></option>
-        <option value="bl" data-i18n="posBl"></option>
-        <option value="br" data-i18n="posBr"></option>
-      </select>
-    </div>
-    <div class="opt">
-      <label for="overlaySize" data-i18n="overlaySize"></label>
-      <select id="overlaySize">
-        <option value="s" data-i18n="sizeS"></option>
-        <option value="m" data-i18n="sizeM"></option>
-        <option value="l" data-i18n="sizeL"></option>
-      </select>
-    </div>
-    <div class="opt">
-      <span id="sitesCount" class="muted-text"></span>
-      <button id="clearSites" class="link muted" data-i18n="clearSites"></button>
-    </div>
-    <div class="opt">
-      <button id="exportBtn" class="link" data-i18n="exportBtn"></button>
-      <button id="importBtn" class="link" data-i18n="importBtn"></button>
-    </div>
-    <div id="importBox" hidden>
-      <textarea id="importText" rows="4" spellcheck="false"></textarea>
-      <div class="row between">
-        <span id="importMsg" class="muted-text"></span>
-        <button id="applyImport" class="btn" data-i18n="applyImport"></button>
-      </div>
-    </div>
-  </details>
-
-  <section class="card support" id="support">
-    <b data-i18n="supportTitle"></b>
-    <p data-i18n="supportText"></p>
-    <div class="row gap">
-      <a id="bmc" class="btn primary" target="_blank" rel="noopener">☕ <span data-i18n="buyCoffee"></span></a>
-      <button id="pix" class="btn" hidden></button>
-    </div>
-    <a id="repo" class="link small" target="_blank" rel="noopener" data-i18n="github"></a>
+  <section class="support" id="support">
+    <a id="bmc" class="btn primary" target="_blank" rel="noopener">☕ <span data-i18n="buyCoffee"></span></a>
+    <button id="pix" class="btn" hidden></button>
   </section>
 
   <script src="../src/shared/defaults.js"></script>
   <script src="../src/shared/config.js"></script>
-  <script src="../src/popup/i18n.js"></script>
+  <script src="../src/shared/i18n.js"></script>
+  <script src="../src/shared/ui.js"></script>
   <script src="../src/popup/popup.js"></script>
 </body>
 </html>
