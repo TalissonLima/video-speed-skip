@@ -13,10 +13,12 @@
     onChanged: { addListener: (l) => listeners.push(l) }
   } };
 </script>
-<video id="v" width="480" height="270" controls muted loop
-  src="data:video/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQRChYECGFOAZwEAAAAAAAHTEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBVJqWZTrIHfTbuMU6uEFlSua1OsggEwTbuMU6uEHFO7a1OsggHk"></video>
-<p>Press S / D / R / Z / X. <button id="fake" hidden class="ytp-skip-ad-button">Skip</button>
+<video id="v" width="480" height="270" controls muted loop src="silence.wav"></video>
+<p>Press S / D / R / Z / X.
+<button id="fake" hidden class="ytp-skip-ad-button">Skip</button>
 <button id="generic" hidden>Pular anúncio</button>
-<button id="nope" hidden>Skip intro</button></p>
+<button id="nope" hidden>Skip to content</button>
+<button id="intro" hidden data-uia="player-skip-intro">Skip Intro</button>
+<button id="introText" hidden>Pular abertura</button></p>
 <script src="../src/shared/defaults.js"></script>
 <script src="../src/content/content.js"></script>

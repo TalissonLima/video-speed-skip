@@ -2,8 +2,8 @@
 (() => {
   const api = globalThis.browser ?? globalThis.chrome;
 
-  // action: slower | faster (value = step) · setSpeed (value = speed)
-  //         rewind | forward (value = seconds)
+  // action: slower | faster (value = step) · setSpeed | hold | toggle (value = speed)
+  //         rewind | forward (value = seconds) · toggleSkip (no value)
   // code is KeyboardEvent.code (layout independent); label is what we display.
   const key = (action, value, code, label) =>
     ({ action, value, code, label, ctrl: false, alt: false, shift: false });
@@ -16,13 +16,20 @@
   ];
 
   const DEFAULTS = {
-    speed: 1,          // current playback speed, shared by all tabs
+    speed: 1,              // speed used in "global" scope
+    speedScope: "site",    // "site" (each domain remembers its own) | "global"
+    siteSpeeds: {},        // hostname -> speed (only used in "site" scope)
     shortcuts: DEFAULT_SHORTCUTS,
-    overlay: true,     // show the on-video speed badge
-    autoSkip: true,    // auto-click "Skip Ad" buttons
-    skipCount: 0,      // lifetime number of ads skipped
-    lang: "auto",      // "auto" | "en" | "pt"
-    disabledSites: []  // hostnames where the extension does nothing
+    overlay: true,         // show the on-video speed badge
+    overlayPos: "tl",      // tl | tr | bl | br
+    overlaySize: "m",      // s | m | l
+    preservePitch: true,   // keep voices natural at high speeds
+    autoSkip: true,        // auto-click "Skip Ad" buttons
+    skipIntro: false,      // auto-click "Skip Intro / Recap" on streaming sites
+    skipCount: 0,          // lifetime number of ads skipped
+    savedSeconds: 0,       // lifetime seconds saved by watching faster than 1x
+    lang: "auto",          // "auto" | "en" | "pt" | "es"
+    disabledSites: []      // hostnames where the extension does nothing
   };
 
   globalThis.VSS = {
@@ -36,6 +43,18 @@
     },
     save(patch) {
       return api.storage.local.set(patch);
+    },
+    // Speed lookup / storage patch, honouring the "remember speed" scope.
+    speedFor(cfg, host) {
+      return cfg.speedScope === "site" ? (cfg.siteSpeeds[host] ?? 1) : cfg.speed;
+    },
+    speedPatch(cfg, host, n) {
+      if (cfg.speedScope === "site" && host) {
+        const sites = { ...cfg.siteSpeeds };
+        if (n === 1) delete sites[host]; else sites[host] = n;
+        return { siteSpeeds: sites };
+      }
+      return { speed: n };
     }
   };
 })();

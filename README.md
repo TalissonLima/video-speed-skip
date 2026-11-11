@@ -2,12 +2,16 @@
 
 Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencies**).
 
-- **Speed control** — any video, 0.1× to 16×, on-video badge, keyboard shortcuts
+- **Speed control** — any video, 0.1× to 16×, on-video badge (position and size configurable)
+- **Per-site speed** — each website remembers its own speed (or switch to one global speed)
 - **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" the moment the button appears
-- **EN / PT** interface, light/dark theme, per-site disable
+- **Skip intros & recaps** (optional) — "Skip Intro" / "Skip Recap" on streaming sites
+- **Stats** — time saved by watching faster, and ads skipped
+- **EN / PT / ES** interface, light/dark theme, per-site disable, settings backup (copy / paste)
 
 Keyboard shortcuts are **fully configurable** in the popup: pick any key (with Ctrl/Alt/Shift if you like),
-an action (slower, faster, set speed, rewind, forward) and its value. Defaults:
+an action and its value. Actions: slower, faster, set speed, **hold** (temporary speed while the key is down),
+**toggle** (jump to a speed, press again to go back), ad skip on/off, rewind, forward. Defaults:
 
 | Key | Action |
 |-----|--------|

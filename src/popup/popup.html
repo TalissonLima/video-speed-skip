@@ -22,12 +22,13 @@
     <div class="seg" role="group" aria-label="Language">
       <button data-lang="en">EN</button>
       <button data-lang="pt">PT</button>
+      <button data-lang="es">ES</button>
     </div>
   </header>
 
-  <section class="card">
+  <section class="card" id="speedCard">
     <div class="row between">
-      <span class="label" data-i18n="speed"></span>
+      <span class="label" id="speedLabel"></span>
       <button id="reset" class="link" data-i18n="reset"></button>
     </div>
     <div class="speed">
@@ -39,10 +40,19 @@
     <div class="chips" id="chips"></div>
   </section>
 
+  <section class="stats">
+    <div class="stat"><span class="ico" aria-hidden="true">⏱</span><div><b id="saved">0s</b><small data-i18n="timeSaved"></small></div></div>
+    <div class="stat"><span class="ico" aria-hidden="true">⏭</span><div><b id="skipped">0</b><small data-i18n="adsSkippedLabel"></small></div></div>
+  </section>
+
   <section class="card list">
     <label class="item">
-      <span><b data-i18n="adSkip"></b><small data-i18n="adSkipDesc"></small><small id="count" class="accent"></small></span>
+      <span><b data-i18n="adSkip"></b><small data-i18n="adSkipDesc"></small></span>
       <input type="checkbox" id="autoSkip" class="switch">
+    </label>
+    <label class="item">
+      <span><b data-i18n="skipIntro"></b><small data-i18n="skipIntroDesc"></small></span>
+      <input type="checkbox" id="skipIntro" class="switch">
     </label>
     <label class="item">
       <span><b data-i18n="overlay"></b><small data-i18n="overlayDesc"></small></span>
@@ -61,6 +71,53 @@
     <div class="row between">
       <button id="addSc" class="link" data-i18n="addShortcut"></button>
       <button id="restoreSc" class="link muted" data-i18n="restoreDefaults"></button>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary data-i18n="settings"></summary>
+    <div class="opt first">
+      <label for="scope" data-i18n="rememberSpeed"></label>
+      <select id="scope">
+        <option value="site" data-i18n="scopeSite"></option>
+        <option value="global" data-i18n="scopeGlobal"></option>
+      </select>
+    </div>
+    <div class="opt">
+      <span><b data-i18n="preservePitch"></b><small data-i18n="preservePitchDesc"></small></span>
+      <input type="checkbox" id="preservePitch" class="switch">
+    </div>
+    <div class="opt">
+      <label for="overlayPos" data-i18n="overlayPos"></label>
+      <select id="overlayPos">
+        <option value="tl" data-i18n="posTl"></option>
+        <option value="tr" data-i18n="posTr"></option>
+        <option value="bl" data-i18n="posBl"></option>
+        <option value="br" data-i18n="posBr"></option>
+      </select>
+    </div>
+    <div class="opt">
+      <label for="overlaySize" data-i18n="overlaySize"></label>
+      <select id="overlaySize">
+        <option value="s" data-i18n="sizeS"></option>
+        <option value="m" data-i18n="sizeM"></option>
+        <option value="l" data-i18n="sizeL"></option>
+      </select>
+    </div>
+    <div class="opt">
+      <span id="sitesCount" class="muted-text"></span>
+      <button id="clearSites" class="link muted" data-i18n="clearSites"></button>
+    </div>
+    <div class="opt">
+      <button id="exportBtn" class="link" data-i18n="exportBtn"></button>
+      <button id="importBtn" class="link" data-i18n="importBtn"></button>
+    </div>
+    <div id="importBox" hidden>
+      <textarea id="importText" rows="4" spellcheck="false"></textarea>
+      <div class="row between">
+        <span id="importMsg" class="muted-text"></span>
+        <button id="applyImport" class="btn" data-i18n="applyImport"></button>
+      </div>
     </div>
   </details>
 

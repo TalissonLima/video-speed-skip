@@ -4,12 +4,17 @@
   const cfg = await VSS.load();
 
   /* ---- language ---- */
-  const resolveLang = () =>
-    cfg.lang !== "auto" ? cfg.lang : (navigator.language || "en").toLowerCase().startsWith("pt") ? "pt" : "en";
+  const LANGS = ["en", "pt", "es"];
+  const LOCALES = { en: "en-US", pt: "pt-BR", es: "es-ES" };
+  const resolveLang = () => {
+    if (LANGS.includes(cfg.lang)) return cfg.lang;
+    const l = (navigator.language || "en").toLowerCase();
+    return l.startsWith("pt") ? "pt" : l.startsWith("es") ? "es" : "en";
+  };
   let lang = resolveLang();
 
   const t = (key, vars = {}) =>
-    (VSS_I18N[lang][key] ?? key).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+    (VSS_I18N[lang][key] ?? VSS_I18N.en[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
 
   // PIX only makes sense for people in Brazil.
   const inBrazil =
@@ -25,33 +30,60 @@
     if (/^https?:$/.test(u.protocol)) host = u.hostname;
   } catch { /* page not accessible */ }
 
-  /* ---- render ---- */
+  /* ---- rendering ---- */
+  const fmtDuration = (sec) => {
+    sec = Math.round(sec);
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+    return h ? `${h}h ${m}m` : m ? `${m}m` : `${sec}s`;
+  };
+
+  function renderStats() {
+    $("#saved").textContent = fmtDuration(cfg.savedSeconds);
+    $("#skipped").textContent = cfg.skipCount.toLocaleString(LOCALES[lang]);
+  }
+
+  function renderInfo() {
+    $("#sitesCount").textContent = t("sitesSaved", { n: Object.keys(cfg.siteSpeeds).length });
+  }
+
   function renderTexts() {
-    document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
+    document.documentElement.lang = lang === "pt" ? "pt-BR" : lang;
     document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
     document.querySelectorAll("[data-lang]").forEach((b) => b.classList.toggle("on", b.dataset.lang === lang));
     $("#host").textContent = host ? t("disableSiteDesc", { host }) : t("disableSiteNone");
-    $("#count").textContent = t("adsSkipped", { n: cfg.skipCount.toLocaleString(lang === "pt" ? "pt-BR" : "en-US") });
     $("#pix").textContent = "PIX · " + t("copyPix");
+    renderStats();
+    renderInfo();
+    renderSpeed();
     renderShortcuts();
   }
 
+  /* ---- speed ---- */
+  const siteMode = () => cfg.speedScope === "site";
+  const controlsOff = () => siteMode() && !host;
+  const currentSpeed = () => VSS.speedFor(cfg, host);
   const fmt = (n) => n.toFixed(2) + "×";
   const PRESETS = [1, 1.25, 1.5, 2, 3];
 
   function renderSpeed() {
-    $("#value").textContent = fmt(cfg.speed);
-    $("#slider").value = cfg.speed;
-    document.querySelectorAll("#chips button").forEach((b) => b.classList.toggle("on", Number(b.dataset.v) === cfg.speed));
+    const s = currentSpeed();
+    $("#value").textContent = fmt(s);
+    $("#slider").value = s;
+    document.querySelectorAll("#chips button").forEach((b) => b.classList.toggle("on", Number(b.dataset.v) === s));
+    $("#speedLabel").textContent = !siteMode() ? t("speedAll") : host ? t("speedFor", { host }) : t("speedNoSite");
+    $("#speedCard").classList.toggle("off", controlsOff());
   }
 
   function setSpeed(n) {
-    cfg.speed = Math.min(MAX, Math.max(MIN, Math.round(n * 100) / 100));
-    VSS.save({ speed: cfg.speed });
+    if (controlsOff()) return;
+    n = Math.min(MAX, Math.max(MIN, Math.round(n * 100) / 100));
+    const patch = VSS.speedPatch(cfg, host, n);
+    Object.assign(cfg, patch);
+    VSS.save(patch);
     renderSpeed();
+    renderInfo();
   }
 
-  /* ---- speed controls ---- */
   PRESETS.forEach((v) => {
     const b = document.createElement("button");
     b.dataset.v = v;
@@ -60,18 +92,28 @@
     $("#chips").append(b);
   });
   $("#slider").oninput = (e) => setSpeed(Number(e.target.value));
-  $("#minus").onclick = () => setSpeed(cfg.speed - 0.1);
-  $("#plus").onclick = () => setSpeed(cfg.speed + 0.1);
+  $("#minus").onclick = () => setSpeed(currentSpeed() - 0.1);
+  $("#plus").onclick = () => setSpeed(currentSpeed() + 0.1);
   $("#reset").onclick = () => setSpeed(1);
 
-  /* ---- toggles ---- */
-  const bind = (id, key) => {
+  /* ---- toggles and selects ---- */
+  const bind = (id, key, after) => {
     const el = $(id);
-    el.checked = cfg[key];
-    el.onchange = () => { cfg[key] = el.checked; VSS.save({ [key]: cfg[key] }); };
+    const isBox = el.type === "checkbox";
+    el[isBox ? "checked" : "value"] = cfg[key];
+    el.onchange = () => {
+      cfg[key] = isBox ? el.checked : el.value;
+      VSS.save({ [key]: cfg[key] });
+      after?.();
+    };
   };
   bind("#autoSkip", "autoSkip");
+  bind("#skipIntro", "skipIntro");
   bind("#overlay", "overlay");
+  bind("#preservePitch", "preservePitch");
+  bind("#overlayPos", "overlayPos");
+  bind("#overlaySize", "overlaySize");
+  bind("#scope", "speedScope", renderSpeed);
 
   const site = $("#disableSite");
   site.checked = !!host && cfg.disabledSites.includes(host);
@@ -84,32 +126,25 @@
     VSS.save({ disabledSites: cfg.disabledSites });
   };
 
+  $("#clearSites").onclick = () => {
+    cfg.siteSpeeds = {};
+    VSS.save({ siteSpeeds: {} });
+    renderSpeed();
+    renderInfo();
+  };
+
   /* ---- language switch ---- */
   document.querySelectorAll("[data-lang]").forEach((b) => {
     b.onclick = () => { lang = b.dataset.lang; cfg.lang = lang; VSS.save({ lang }); renderTexts(); };
   });
 
-  /* ---- support ---- */
-  const { buyMeACoffee, pixKey, repo } = VSS_CONFIG;
-  if (buyMeACoffee) $("#bmc").href = buyMeACoffee; else $("#bmc").hidden = true;
-  if (repo) $("#repo").href = repo; else $("#repo").hidden = true;
-  if (pixKey && inBrazil) {
-    const pix = $("#pix");
-    pix.hidden = false;
-    pix.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(pixKey);
-        pix.textContent = "✓ " + t("pixCopied");
-        setTimeout(renderTexts, 1800);
-      } catch { /* clipboard blocked */ }
-    };
-  }
-  if (!buyMeACoffee && !(pixKey && inBrazil)) $("#support").hidden = true;
-
   /* ---- configurable shortcuts ---- */
-  const ACTIONS = { slower: "aSlower", faster: "aFaster", setSpeed: "aSet", rewind: "aBack", forward: "aForward" };
-  const UNIT = { slower: "×", faster: "×", setSpeed: "×", rewind: "s", forward: "s" };
-  const DEFAULT_VALUE = { slower: 0.1, faster: 0.1, setSpeed: 1, rewind: 10, forward: 10 };
+  const ACTIONS = {
+    slower: "aSlower", faster: "aFaster", setSpeed: "aSet", hold: "aHold",
+    toggle: "aToggle", toggleSkip: "aToggleSkip", rewind: "aBack", forward: "aForward"
+  };
+  const UNIT = { slower: "×", faster: "×", setSpeed: "×", hold: "×", toggle: "×", toggleSkip: "", rewind: "s", forward: "s" };
+  const DEFAULT_VALUE = { slower: 0.1, faster: 0.1, setSpeed: 1, hold: 2, toggle: 2, toggleSkip: 0, rewind: 10, forward: 10 };
   const MODIFIER_CODES = /^(Control|Shift|Alt|Meta)(Left|Right)$/;
   const ARROWS = { ArrowLeft: "←", ArrowRight: "→", ArrowUp: "↑", ArrowDown: "↓", Space: "Space" };
 
@@ -173,6 +208,7 @@
       val.min = "0.05";
       val.step = "0.05";
       val.value = s.value;
+      val.style.visibility = s.action === "toggleSkip" ? "hidden" : "";
       val.oninput = () => {
         const n = Number(val.value);
         if (n > 0) { s.value = n; saveShortcuts(); }
@@ -205,13 +241,80 @@
     renderShortcuts();
   };
 
-  /* ---- live updates (e.g. keyboard shortcut used while popup is open) ---- */
-  api.storage.onChanged.addListener((ch, area) => {
+  /* ---- backup: copy / paste settings as JSON ---- */
+  const EXPORT_KEYS = ["speed", "speedScope", "siteSpeeds", "shortcuts", "overlay", "overlayPos", "overlaySize",
+    "preservePitch", "autoSkip", "skipIntro", "lang", "disabledSites"];
+  const ENUMS = { speedScope: ["site", "global"], overlayPos: ["tl", "tr", "bl", "br"], overlaySize: ["s", "m", "l"], lang: ["auto", ...LANGS] };
+
+  function sanitize(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("not an object");
+    const out = {};
+    for (const k of EXPORT_KEYS) {
+      if (!(k in raw)) continue;
+      const v = raw[k], d = VSS.DEFAULTS[k];
+      if (Array.isArray(d) ? !Array.isArray(v) : typeof v !== typeof d || v === null || Array.isArray(v)) continue;
+      if (ENUMS[k] && !ENUMS[k].includes(v)) continue;
+      out[k] = v;
+    }
+    if (out.speed !== undefined) out.speed = Math.min(MAX, Math.max(MIN, out.speed));
+    if (out.disabledSites) out.disabledSites = out.disabledSites.filter((h) => typeof h === "string");
+    if (out.siteSpeeds) {
+      out.siteSpeeds = Object.fromEntries(Object.entries(out.siteSpeeds)
+        .filter(([, n]) => typeof n === "number" && n >= MIN && n <= MAX));
+    }
+    if (out.shortcuts) {
+      out.shortcuts = out.shortcuts
+        .filter((s) => s && ACTIONS[s.action] && typeof s.code === "string" && Number.isFinite(Number(s.value)))
+        .map((s) => ({ action: s.action, value: Number(s.value), code: s.code, label: String(s.label ?? ""),
+          ctrl: !!s.ctrl, alt: !!s.alt, shift: !!s.shift }));
+    }
+    if (!Object.keys(out).length) throw new Error("nothing to import");
+    return out;
+  }
+
+  $("#exportBtn").onclick = async () => {
+    const data = Object.fromEntries(EXPORT_KEYS.map((k) => [k, cfg[k]]));
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      $("#exportBtn").textContent = "✓ " + t("copied");
+      setTimeout(() => ($("#exportBtn").textContent = t("exportBtn")), 1500);
+    } catch { /* clipboard blocked */ }
+  };
+  $("#importBtn").onclick = () => { $("#importBox").hidden = !$("#importBox").hidden; };
+  $("#applyImport").onclick = async () => {
+    try {
+      await VSS.save(sanitize(JSON.parse($("#importText").value)));
+      location.reload();
+    } catch {
+      $("#importMsg").textContent = t("invalidSettings");
+    }
+  };
+
+  /* ---- support ---- */
+  const { buyMeACoffee, pixKey, repo } = VSS_CONFIG;
+  if (buyMeACoffee) $("#bmc").href = buyMeACoffee; else $("#bmc").hidden = true;
+  if (repo) $("#repo").href = repo; else $("#repo").hidden = true;
+  if (pixKey && inBrazil) {
+    const pix = $("#pix");
+    pix.hidden = false;
+    pix.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(pixKey);
+        pix.textContent = "✓ " + t("pixCopied");
+        setTimeout(() => (pix.textContent = "PIX · " + t("copyPix")), 1800);
+      } catch { /* clipboard blocked */ }
+    };
+  }
+  if (!buyMeACoffee && !(pixKey && inBrazil)) $("#support").hidden = true;
+
+  /* ---- live updates (keyboard shortcut used while the popup is open, other tabs, ...) ---- */
+  api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
-    if (ch.speed) { cfg.speed = ch.speed.newValue; renderSpeed(); }
-    if (ch.skipCount) { cfg.skipCount = ch.skipCount.newValue; renderTexts(); }
+    for (const [k, c] of Object.entries(changes)) if ("newValue" in c && k !== "shortcuts") cfg[k] = c.newValue;
+    renderSpeed();
+    renderStats();
+    renderInfo();
   });
 
   renderTexts();
-  renderSpeed();
 })();
