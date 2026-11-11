@@ -65,3 +65,17 @@ kbd { min-width: 24px; text-align: center; padding: 2px 6px; border-radius: 6px;
 .btn[hidden] { display: none; }
 .link { background: none; border: 0; color: var(--accent); cursor: pointer; font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-decoration: none; padding: 0; }
 .link.small { display: inline-block; margin-top: 10px; font-size: 11.5px; color: var(--muted); font-weight: 500; }
+
+/* configurable shortcuts */
+.hint { margin: 8px 0; color: var(--muted); font-size: 11.5px; }
+.scs { display: grid; gap: 6px; margin-bottom: 10px; }
+.sc { display: grid; grid-template-columns: 74px 1fr 52px 14px 22px; align-items: center; gap: 6px; }
+.keybtn { height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--chip); color: var(--text); font: 600 12px/1 ui-monospace, monospace; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.keybtn:hover { border-color: var(--accent); }
+.keybtn.rec { border-color: var(--accent); color: var(--accent); font-family: system-ui, sans-serif; font-size: 11px; }
+.keybtn.dup { border-color: #ef4444; }
+.sc select, .sc input { height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font: 12px/1 system-ui, sans-serif; padding: 0 6px; min-width: 0; width: 100%; }
+.sc .unit { color: var(--muted); font-size: 11.5px; }
+.sc .del { border: 0; background: none; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; padding: 0; }
+.sc .del:hover { color: #ef4444; }
+.link.muted { color: var(--muted); font-weight: 500; }

@@ -107,18 +107,24 @@
   const typing = (t) => t?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t?.tagName ?? "");
 
   document.addEventListener("keydown", (e) => {
-    if (!enabled() || e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return;
+    if (!enabled() || e.metaKey || typing(e.target)) return;
+    const sc = cfg.shortcuts.find((s) =>
+      s.code && s.code === e.code &&
+      !!s.ctrl === e.ctrlKey && !!s.alt === e.altKey && !!s.shift === e.shiftKey);
+    if (!sc) return;
     const v = pickVideo();
     if (!v) return;
-    switch (e.code) {
-      case "KeyS": setSpeed(cfg.speed - cfg.step); break;
-      case "KeyD": setSpeed(cfg.speed + cfg.step); break;
-      case "KeyR": setSpeed(1); break;
-      case "KeyZ": v.currentTime = Math.max(0, v.currentTime - 10); flash("−10s"); break;
-      case "KeyX": v.currentTime += 10; flash("+10s"); break;
+    const n = Number(sc.value);
+    switch (sc.action) {
+      case "slower": setSpeed(cfg.speed - (n || 0.1)); break;
+      case "faster": setSpeed(cfg.speed + (n || 0.1)); break;
+      case "setSpeed": setSpeed(n || 1); break;
+      case "rewind": v.currentTime = Math.max(0, v.currentTime - (n || 10)); flash(`−${n || 10}s`); break;
+      case "forward": v.currentTime += n || 10; flash(`+${n || 10}s`); break;
       default: return;
     }
     e.preventDefault();
+    e.stopPropagation(); // keep the site's own handler for this key from also firing
   }, true);
 
   /* ------------------------------------------------------------------ *

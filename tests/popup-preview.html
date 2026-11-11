@@ -59,13 +59,12 @@ globalThis.chrome={storage:{local:{get:async()=>({...store}),set:async(x)=>Objec
 
   <details class="card">
     <summary data-i18n="shortcuts"></summary>
-    <ul class="keys">
-      <li><kbd>S</kbd><span data-i18n="kSlower"></span></li>
-      <li><kbd>D</kbd><span data-i18n="kFaster"></span></li>
-      <li><kbd>R</kbd><span data-i18n="kReset"></span></li>
-      <li><kbd>Z</kbd><span data-i18n="kBack"></span></li>
-      <li><kbd>X</kbd><span data-i18n="kForward"></span></li>
-    </ul>
+    <p class="hint" data-i18n="shortcutsHint"></p>
+    <div id="sc" class="scs"></div>
+    <div class="row between">
+      <button id="addSc" class="link" data-i18n="addShortcut"></button>
+      <button id="restoreSc" class="link muted" data-i18n="restoreDefaults"></button>
+    </div>
   </details>
 
   <section class="card support" id="support">

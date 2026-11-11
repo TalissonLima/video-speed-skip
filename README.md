@@ -6,6 +6,9 @@ Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencie
 - **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" the moment the button appears
 - **EN / PT** interface, light/dark theme, per-site disable
 
+Keyboard shortcuts are **fully configurable** in the popup: pick any key (with Ctrl/Alt/Shift if you like),
+an action (slower, faster, set speed, rewind, forward) and its value. Defaults:
+
 | Key | Action |
 |-----|--------|
 | `S` / `D` | slower / faster (±0.1×) |
