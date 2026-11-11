@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>VSS manual test</title>
+<!-- Stubs the extension API so the content script can run on a plain page. -->
+<script>
+  const store = {};
+  const listeners = [];
+  globalThis.chrome = { storage: {
+    local: {
+      get: async () => ({ ...store }),
+      set: async (p) => { const ch = {}; for (const k in p) { ch[k] = { newValue: p[k] }; store[k] = p[k]; } listeners.forEach((l) => l(ch, "local")); }
+    },
+    onChanged: { addListener: (l) => listeners.push(l) }
+  } };
+</script>
+<video id="v" width="480" height="270" controls muted loop
+  src="data:video/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQRChYECGFOAZwEAAAAAAAHTEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBVJqWZTrIHfTbuMU6uEFlSua1OsggEwTbuMU6uEHFO7a1OsggHk"></video>
+<p>Press S / D / R / Z / X. <button id="fake" hidden class="ytp-skip-ad-button">Skip</button>
+<button id="generic" hidden>Pular anúncio</button>
+<button id="nope" hidden>Skip intro</button></p>
+<script src="../src/shared/defaults.js"></script>
+<script src="../src/content/content.js"></script>

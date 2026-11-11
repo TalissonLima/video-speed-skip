@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Video Speed &amp; Skip</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs>
+        <rect width="32" height="32" rx="8" fill="url(#g)"/>
+        <path d="M7 9v14l8-7zM15 9v14l8-7z" fill="#fff"/><rect x="24" y="9" width="2" height="14" rx="1" fill="#fff"/>
+      </svg>
+      <div>
+        <h1>Video Speed &amp; Skip</h1>
+        <p data-i18n="tagline"></p>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Language">
+      <button data-lang="en">EN</button>
+      <button data-lang="pt">PT</button>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="row between">
+      <span class="label" data-i18n="speed"></span>
+      <button id="reset" class="link" data-i18n="reset"></button>
+    </div>
+    <div class="speed">
+      <button id="minus" class="round" aria-label="−">−</button>
+      <output id="value">1.00×</output>
+      <button id="plus" class="round" aria-label="+">+</button>
+    </div>
+    <input id="slider" type="range" min="0.25" max="4" step="0.05" value="1">
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <section class="card list">
+    <label class="item">
+      <span><b data-i18n="adSkip"></b><small data-i18n="adSkipDesc"></small><small id="count" class="accent"></small></span>
+      <input type="checkbox" id="autoSkip" class="switch">
+    </label>
+    <label class="item">
+      <span><b data-i18n="overlay"></b><small data-i18n="overlayDesc"></small></span>
+      <input type="checkbox" id="overlay" class="switch">
+    </label>
+    <label class="item">
+      <span><b data-i18n="disableSite"></b><small id="host"></small></span>
+      <input type="checkbox" id="disableSite" class="switch">
+    </label>
+  </section>
+
+  <details class="card">
+    <summary data-i18n="shortcuts"></summary>
+    <ul class="keys">
+      <li><kbd>S</kbd><span data-i18n="kSlower"></span></li>
+      <li><kbd>D</kbd><span data-i18n="kFaster"></span></li>
+      <li><kbd>R</kbd><span data-i18n="kReset"></span></li>
+      <li><kbd>Z</kbd><span data-i18n="kBack"></span></li>
+      <li><kbd>X</kbd><span data-i18n="kForward"></span></li>
+    </ul>
+  </details>
+
+  <section class="card support" id="support">
+    <b data-i18n="supportTitle"></b>
+    <p data-i18n="supportText"></p>
+    <div class="row gap">
+      <a id="bmc" class="btn primary" target="_blank" rel="noopener">☕ <span data-i18n="buyCoffee"></span></a>
+      <button id="pix" class="btn" hidden></button>
+    </div>
+    <a id="repo" class="link small" target="_blank" rel="noopener" data-i18n="github"></a>
+  </section>
+
+  <script src="../shared/defaults.js"></script>
+  <script src="../shared/config.js"></script>
+  <script src="i18n.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
