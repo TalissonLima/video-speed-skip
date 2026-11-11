@@ -180,6 +180,7 @@
     slower: ["aSlower", "hSlower", "×", 0.1], faster: ["aFaster", "hFaster", "×", 0.1],
     setSpeed: ["aSet", "hSet", "×", 1], hold: ["aHold", "hHold", "×", 2],
     toggle: ["aToggle", "hToggle", "×", 2], toggleSkip: ["aToggleSkip", "hToggleSkip", "", 0],
+    toggleSite: ["aToggleSite", "hToggleSite", "", 0],
     rewind: ["aBack", "hBack", "s", 10], forward: ["aForward", "hForward", "s", 10]
   };
   const MODIFIER_CODES = /^(Control|Shift|Alt|Meta)(Left|Right)$/;
@@ -237,7 +238,7 @@
         if (n > 0) { s.value = n; saveShortcuts(); }
       };
       const group = valueGroup(val, ACTIONS[s.action][2]);
-      group.style.visibility = s.action === "toggleSkip" ? "hidden" : "";
+      group.style.visibility = s.action === "toggleSkip" || s.action === "toggleSite" ? "hidden" : "";
 
       const del = removeButton(() => { cfg.shortcuts.splice(i, 1); saveShortcuts(); renderShortcuts(); });
 
@@ -320,7 +321,7 @@
     });
   }
 
-  for (const key of ["autoSkip", "skipIntro", "overlay", "preservePitch"]) {
+  for (const key of ["autoSkip", "skipIntro", "adNormalSpeed", "overlay", "preservePitch"]) {
     const box = $("#" + key);
     box.checked = cfg[key];
     box.onchange = () => save({ [key]: box.checked });
@@ -352,7 +353,7 @@
    * Data: backup / restore / reset
    * ================================================================== */
   const EXPORT_KEYS = ["speed", "speedScope", "siteSpeeds", "presets", "shortcuts", "overlay", "overlayPos",
-    "overlaySize", "preservePitch", "autoSkip", "skipIntro", "lang", "disabledSites"];
+    "overlaySize", "preservePitch", "autoSkip", "skipIntro", "adNormalSpeed", "lang", "disabledSites"];
   const ENUMS = { speedScope: ["site", "global"], overlayPos: ["tl", "tr", "bl", "br"], overlaySize: ["s", "m", "l"], lang: ["auto", ...ui.LANGS] };
 
   function sanitize(raw) {

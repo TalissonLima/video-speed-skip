@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Build packages
+        run: python3 scripts/build.py
+
+      - name: Manifests are valid JSON and versions match
+        run: |
+          python3 - <<'EOF'
+          import json
+          src = json.load(open("src/manifest.json"))
+          for target in ("chrome", "firefox"):
+              m = json.load(open(f"dist/{target}/manifest.json"))
+              assert m["version"] == src["version"], (target, m["version"])
+              assert m["manifest_version"] == 3
+          print("manifests ok, version", src["version"])
+          EOF
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-packages
+          path: dist/*.zip

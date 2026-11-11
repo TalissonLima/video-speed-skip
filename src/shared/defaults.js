@@ -27,6 +27,7 @@
     overlaySize: "m",      // s | m | l
     preservePitch: true,   // keep voices natural at high speeds
     autoSkip: true,        // auto-click "Skip Ad" buttons
+    adNormalSpeed: true,   // play ads at 1x (then go back to your speed)
     skipIntro: false,      // auto-click "Skip Intro / Recap" on streaming sites
     skipCount: 0,          // lifetime number of ads skipped
     savedSeconds: 0,       // lifetime seconds saved by watching faster than 1x

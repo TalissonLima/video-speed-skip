@@ -1,6 +1,11 @@
 // Video Speed & Skip — content script (runs in every frame).
-// Features: per-site playback speed, shortcuts (incl. hold / toggle),
-// automatic "Skip Ad" and optional "Skip Intro" clicking, time-saved stats.
+// Features: per-site playback speed, shortcuts (incl. hold / toggle / pause site),
+// automatic "Skip Ad" and optional "Skip Intro" clicking, normal speed during ads,
+// time-saved stats.
+//
+// Performance: on a page without a <video> this script only keeps one cheap, throttled
+// observer. The heavy work (timers, attribute observer, scanning) starts the moment a
+// video shows up (see activate()).
 (() => {
   if (!globalThis.VSS || window.__vssLoaded) return;
   window.__vssLoaded = true;
@@ -11,11 +16,14 @@
   let tempSpeed = null;    // speed while a "hold" key is down (never saved)
   let held = null;         // { code } of the held key
   let beforeToggle = null; // speed to return to when a "toggle" shortcut is pressed again
+  let active = false;      // false until the page actually has a video
+  let lastAd = false;      // was an ad playing at the last scan?
+  let adChangedAt = 0;     // when an ad started/ended (to ignore the site's own rate resets)
 
   /* ------------------------------------------------------------------ *
    * Helpers
    * ------------------------------------------------------------------ */
-  // The hostname of the tab (not of the iframe) is the key for per-site speed.
+  // The hostname of the tab (not of the iframe) is the key for per-site settings.
   let cachedHost;
   const hostname = () => (cachedHost ??= (() => {
     try { return top.location.hostname; } catch { /* cross-origin frame */ }
@@ -29,7 +37,52 @@
   const near = (a, b) => Math.abs(a - b) < 1e-6;
   const fmt = (n) => n.toFixed(2).replace(/\.?0+$/, "") + "×";
   const area = (v) => { const r = v.getBoundingClientRect(); return r.width * r.height; };
-  const speedNow = () => tempSpeed ?? VSS.speedFor(cfg, hostname());
+
+  // YouTube marks its player while an ad is playing.
+  const AD_PLAYING = ".html5-video-player.ad-showing, .html5-video-player.ad-interrupting";
+  const adPlaying = () => !!document.querySelector(AD_PLAYING);
+
+  // Speed we want right now: held key > normal speed during ads > saved speed.
+  const speedNow = () =>
+    tempSpeed ?? (cfg.adNormalSpeed && adPlaying() ? 1 : VSS.speedFor(cfg, hostname()));
+
+  /* ------------------------------------------------------------------ *
+   * Finding videos (also inside open shadow roots, e.g. web-component players)
+   * ------------------------------------------------------------------ */
+  const roots = [];            // open shadow roots we listen on
+  const seenRoots = new WeakSet();
+  let lastShadowScan = 0;
+
+  function scanShadows(force = false) {
+    const now = Date.now();
+    if (!force && now - lastShadowScan < 1500) return;
+    lastShadowScan = now;
+    const visit = (scope) => {
+      for (const el of scope.querySelectorAll("*")) {
+        const sr = el.shadowRoot;
+        if (sr && !seenRoots.has(sr)) {
+          seenRoots.add(sr);
+          roots.push(sr);
+          listen(sr);
+        }
+      }
+    };
+    visit(document);
+    for (let i = 0; i < roots.length; i++) visit(roots[i]); // roots grows while we iterate: nested shadows
+  }
+
+  function allVideos() {
+    const out = [...document.querySelectorAll("video")];
+    for (const r of roots) if (r.host.isConnected) out.push(...r.querySelectorAll("video"));
+    return out;
+  }
+
+  function pickVideo() {
+    if (activeVideo?.isConnected) return activeVideo;
+    const vids = allVideos().filter((v) => v.readyState > 0 || !v.paused);
+    vids.sort((a, b) => (Number(!b.paused) - Number(!a.paused)) || area(b) - area(a));
+    return vids[0] ?? null;
+  }
 
   /* ------------------------------------------------------------------ *
    * Overlay (shadow DOM so site CSS can't touch it)
@@ -52,15 +105,9 @@
     badge = root.querySelector(".b");
   }
 
-  function pickVideo() {
-    if (activeVideo?.isConnected) return activeVideo;
-    const vids = [...document.querySelectorAll("video")].filter((v) => v.readyState > 0 || !v.paused);
-    vids.sort((a, b) => (Number(!b.paused) - Number(!a.paused)) || area(b) - area(a));
-    return vids[0] ?? null;
-  }
-
-  function flash(text) {
-    if (!cfg.overlay || !enabled()) return;
+  // `force` shows the badge even on a paused site (used by the pause shortcut itself).
+  function flash(text, force = false) {
+    if (!cfg.overlay || (!force && !enabled())) return;
     const v = pickVideo();
     if (!v) return;
     if (!overlayHost) buildOverlay();
@@ -97,7 +144,7 @@
     v.__vssSetting = true;
     v.playbackRate = want;
   }
-  const applyAll = () => document.querySelectorAll("video").forEach(applySpeed);
+  const applyAll = () => allVideos().forEach(applySpeed);
 
   // Save a speed for this site (or globally, depending on the scope setting).
   function persist(n) {
@@ -115,30 +162,40 @@
     flash(fmt(n));
   }
 
-  const mark = (e) => { if (e.target instanceof HTMLVideoElement) e.target.__vssLoadedAt = Date.now(); };
+  // Media events don't bubble, but they can be captured on the document / a shadow root.
+  const isVideo = (e) => e.target instanceof HTMLVideoElement;
 
-  // Media events don't bubble, but they can be captured on the document.
-  for (const type of ["loadstart", "emptied", "loadedmetadata"]) {
-    document.addEventListener(type, (e) => { mark(e); if (e.target instanceof HTMLVideoElement) applySpeed(e.target); }, true);
-  }
-  for (const type of ["play", "playing"]) {
-    document.addEventListener(type, (e) => {
-      if (!(e.target instanceof HTMLVideoElement)) return;
-      activeVideo = e.target;
-      applySpeed(e.target);
-    }, true);
+  function onLoad(e) {
+    if (!isVideo(e)) return;
+    if (!active) activate();
+    e.target.__vssLoadedAt = Date.now();
+    applySpeed(e.target);
   }
 
-  document.addEventListener("ratechange", (e) => {
+  function onPlay(e) {
+    if (!isVideo(e)) return;
+    if (!active) activate();
+    activeVideo = e.target;
+    applySpeed(e.target);
+  }
+
+  function onRate(e) {
     const v = e.target;
     if (!(v instanceof HTMLVideoElement)) return;
     if (v.__vssSetting) { v.__vssSetting = false; return; }
     if (!enabled() || tempSpeed !== null || near(v.playbackRate, speedNow())) return;
-    // Sites often reset the rate right after loading a new video: undo that.
-    // Otherwise treat it as the user's own choice (e.g. the site's speed menu).
-    if (Date.now() - (v.__vssLoadedAt ?? 0) < 1500) applySpeed(v);
+    // Never learn a speed from the ad player or right after an ad starts/ends, and undo
+    // the resets sites do right after loading a new video. Anything else is the user's
+    // own choice (e.g. the site's speed menu), so remember it.
+    if (adPlaying() || Date.now() - adChangedAt < 1500 || Date.now() - (v.__vssLoadedAt ?? 0) < 1500) applySpeed(v);
     else persist(clamp(v.playbackRate));
-  }, true);
+  }
+
+  function listen(target) {
+    for (const type of ["loadstart", "emptied", "loadedmetadata"]) target.addEventListener(type, onLoad, true);
+    for (const type of ["play", "playing"]) target.addEventListener(type, onPlay, true);
+    target.addEventListener("ratechange", onRate, true);
+  }
 
   /* ------------------------------------------------------------------ *
    * Keyboard shortcuts
@@ -155,12 +212,31 @@
   document.addEventListener("keyup", (e) => { if (held && e.code === held.code) releaseHold(); }, true);
   addEventListener("blur", releaseHold);
 
+  function toggleSite() {
+    const host = hostname();
+    const set = new Set(cfg.disabledSites);
+    const nowOff = !set.has(host);
+    if (nowOff) set.add(host); else set.delete(host);
+    cfg.disabledSites = [...set];
+    VSS.save({ disabledSites: cfg.disabledSites });
+    if (!nowOff) applyAll();
+    flash(nowOff ? "⏸ OFF" : "▶ ON", true);
+  }
+
   document.addEventListener("keydown", (e) => {
-    if (!enabled() || e.metaKey || typing(e.target)) return;
+    if (e.metaKey || typing(e.target)) return;
     const sc = cfg.shortcuts.find((s) =>
       s.code && s.code === e.code &&
       !!s.ctrl === e.ctrlKey && !!s.alt === e.altKey && !!s.shift === e.shiftKey);
     if (!sc) return;
+
+    if (sc.action === "toggleSite") { // works even while the site is paused
+      toggleSite();
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (!enabled()) return;
     const v = pickVideo();
     if (!v) return;
     const n = Number(sc.value);
@@ -252,7 +328,6 @@
 
   function find(selectors, text) {
     for (const el of document.querySelectorAll(selectors)) if (fresh(el) && visible(el)) return el;
-    if (!document.querySelector("video")) return null;
     for (const el of document.querySelectorAll('button,[role="button"]')) {
       if (fresh(el) && text.test(labelOf(el)) && visible(el)) return el;
     }
@@ -264,7 +339,19 @@
     el.click();
   }
 
+  // Runs on DOM changes and once a second while the page has a video.
   function scan() {
+    if (!active) return;
+    scanShadows();
+
+    // When an ad starts or ends, move videos to the right speed straight away.
+    const ad = adPlaying();
+    if (ad !== lastAd) {
+      lastAd = ad;
+      adChangedAt = Date.now();
+      applyAll();
+    }
+
     if (!enabled()) return;
     if (cfg.autoSkip) {
       const btn = find(AD_SELECTORS, AD_TEXT);
@@ -286,21 +373,16 @@
     setTimeout(() => { scanQueued = false; scan(); }, 250);
   };
 
-  new MutationObserver(scheduleScan).observe(document.documentElement, {
-    subtree: true, childList: true, attributes: true, attributeFilter: ["class", "style", "hidden"]
-  });
-  setInterval(scan, 1000); // safety net for changes the observer can't see
-
   /* ------------------------------------------------------------------ *
-   * Time saved: while the main video plays faster than 1x, every second of
-   * real time saves (rate - 1) seconds. Flushed to storage in batches.
+   * Stats: time saved while the main video plays faster than 1x
+   * (every second of real time saves (rate - 1) seconds), flushed in batches.
    * ------------------------------------------------------------------ */
   let pendingSaved = 0;
   let lastTick = performance.now();
 
   function mainPlaying() {
     let best = null, bestArea = 200 * 100; // ignore tiny previews
-    for (const v of document.querySelectorAll("video")) {
+    for (const v of allVideos()) {
       if (v.paused || v.ended || v.readyState < 3) continue;
       const a = area(v);
       if (a > bestArea) { best = v; bestArea = a; }
@@ -350,7 +432,7 @@
     recordStats({ saved });
   }
 
-  setInterval(() => {
+  function tickStats() {
     const now = performance.now();
     const dt = Math.min((now - lastTick) / 1000, 5);
     lastTick = now;
@@ -359,22 +441,56 @@
       if (v && v.playbackRate > 1) pendingSaved += (v.playbackRate - 1) * dt;
     }
     if (pendingSaved >= 5) flushSaved();
-  }, 1000);
+  }
   addEventListener("pagehide", flushSaved);
   document.addEventListener("visibilitychange", () => { if (document.hidden) flushSaved(); });
 
   /* ------------------------------------------------------------------ *
-   * Boot + live settings sync (popup / other tabs)
+   * Lazy start: do nothing heavy until the page has a video
+   * ------------------------------------------------------------------ */
+  function hasVideo() {
+    if (document.querySelector("video")) return true;
+    scanShadows(true);
+    return roots.some((r) => r.host.isConnected && r.querySelector("video"));
+  }
+
+  // Cheap watcher used only while there is no video yet (child additions, throttled).
+  let armTimer = null;
+  const armObserver = new MutationObserver(() => {
+    if (armTimer) return;
+    armTimer = setTimeout(() => {
+      armTimer = null;
+      if (!active && hasVideo()) activate();
+    }, 500);
+  });
+
+  function activate() {
+    if (active) return;
+    active = true;
+    armObserver.disconnect();
+    new MutationObserver(scheduleScan).observe(document.documentElement, {
+      subtree: true, childList: true, attributes: true, attributeFilter: ["class", "style", "hidden"]
+    });
+    setInterval(scan, 1000);       // safety net for changes the observer can't see
+    setInterval(tickStats, 1000);
+    applyAll();
+    scan();
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Boot + live settings sync (popup / options page / other tabs)
    * ------------------------------------------------------------------ */
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     for (const [k, c] of Object.entries(changes)) if ("newValue" in c) cfg[k] = c.newValue;
-    if (["speed", "siteSpeeds", "speedScope", "preservePitch"].some((k) => k in changes)) applyAll();
+    if (["speed", "siteSpeeds", "speedScope", "preservePitch", "adNormalSpeed", "disabledSites"].some((k) => k in changes)) applyAll();
   });
 
+  listen(document);
   VSS.load().then((loaded) => {
     cfg = loaded;
-    applyAll();
-    scan();
+    if (active) applyAll();           // a video fired events before the settings were loaded
+    else if (hasVideo()) activate();
+    else armObserver.observe(document.documentElement, { subtree: true, childList: true });
   });
 })();
