@@ -30,11 +30,15 @@ No install step. Load the `src/` folder directly:
 ## Build packages
 
 ```bash
-python3 scripts/build.py   # → dist/*.zip for Chrome and Firefox
+python3 scripts/build.py                  # → dist/*.zip for Chrome and Firefox (comments stripped)
+python3 scripts/build.py --keep-comments  # same, but keeping comments (handy for debugging)
 ```
 
 Before publishing, edit `src/shared/config.js` (Buy Me a Coffee, PIX key, repo URL)
 and the Firefox add-on id in `scripts/build.py` if you fork it.
+
+`src/` is the commented source of truth; only the packaged copies in `dist/` are stripped.
+For Firefox Add-ons review, submit this repository as the source code.
 
 ## Privacy
 
