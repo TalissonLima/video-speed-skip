@@ -19,7 +19,7 @@ import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 EXT_ID = "video-speed-skip@talissonlima.github.io"
-EXT_UUID = "7a1c0b5e-3f4d-4c3b-9a1e-0d2b7f6c8e11"   # pinned through a pref so moz-extension:// URLs are predictable
+EXT_UUID = "7a1c0b5e-3f4d-4c3b-9a1e-0d2b7f6c8e11"
 GD_PORT = 4466
 HTTP_PORT = 8780
 SITE = f"http://localhost:{HTTP_PORT}/tests"
@@ -129,7 +129,6 @@ class Firefox:
         element_id = next(iter(element.values()))
         pathlib.Path(path).write_bytes(base64.b64decode(call("GET", self.p(f"/element/{element_id}/screenshot"))))
 
-    # ---- convenience ----
     def open_ext(self, page, w=1100, h=800):
         """Open an extension page inside the frame-host page and switch into the frame."""
         self.size(w, h)

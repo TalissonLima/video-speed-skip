@@ -20,7 +20,6 @@ class Package(unittest.TestCase):
         cls.manifest = json.loads((SRC / "manifest.json").read_text())
         cls.version = cls.manifest["version"]
 
-    # ------------------------------------------------------------------ store metadata
     def test_descriptions_fit_the_chrome_limit(self):
         for messages in (SRC / "_locales").glob("*/messages.json"):
             data = json.loads(messages.read_text())
@@ -38,7 +37,7 @@ class Package(unittest.TestCase):
         self.assertEqual(m["manifest_version"], 3)
         self.assertRegex(m["version"], r"^\d+\.\d+\.\d+$")
         self.assertIn("homepage_url", m)
-        self.assertEqual(sorted(m["permissions"]), ["activeTab", "storage"])  # nothing else: it is what the privacy policy promises
+        self.assertEqual(sorted(m["permissions"]), ["activeTab", "storage"])
 
     def test_every_referenced_file_exists(self):
         m = self.manifest
@@ -56,7 +55,6 @@ class Package(unittest.TestCase):
                     continue
                 self.assertTrue((page.parent / ref).resolve().exists(), f"{page.relative_to(SRC)} -> {ref}")
 
-    # ------------------------------------------------------------------ the two builds
     def test_chrome_manifest(self):
         m = json.loads((DIST / "chrome" / "manifest.json").read_text())
         self.assertNotIn("browser_specific_settings", m)
@@ -66,17 +64,16 @@ class Package(unittest.TestCase):
         m = json.loads((DIST / "firefox" / "manifest.json").read_text())
         gecko = m["browser_specific_settings"]["gecko"]
         self.assertEqual(gecko["data_collection_permissions"], {"required": ["none"]})
-        self.assertGreaterEqual(float(gecko["strict_min_version"]), 142.0)  # the key is unknown to older versions
+        self.assertGreaterEqual(float(gecko["strict_min_version"]), 142.0)
         self.assertNotIn("minimum_chrome_version", m)
 
-    # ------------------------------------------------------------------ the zips
     def test_zips_are_clean(self):
         for target in ("chrome", "firefox"):
             zip_path = DIST / f"video-speed-skip-{target}-v{self.version}.zip"
             self.assertTrue(zip_path.exists(), zip_path.name)
             with zipfile.ZipFile(zip_path) as z:
                 names = z.namelist()
-                self.assertIn("manifest.json", names)  # at the root, not inside a folder
+                self.assertIn("manifest.json", names)
                 self.assertFalse([n for n in names if n.endswith((".py", ".md", ".html~", ".DS_Store")) or n.startswith(("tests", "docs"))], names)
                 self.assertLess(sum(i.file_size for i in z.infolist()), 1_000_000)
                 for name in names:
@@ -106,8 +103,8 @@ class Package(unittest.TestCase):
         self.assertEqual(size(store / "promo" / "small-440x280.png"), (440, 280))
         self.assertEqual(size(store / "promo" / "marquee-1400x560.png"), (1400, 560))
         self.assertEqual(len(list((store / "screenshots").rglob("*.png"))), 12)
-        self.assertEqual(size(store / "promo" / "logo-300x300.png"), (300, 300))  # Edge Add-ons: 1:1, 300x300
-        opera = list((store / "screenshots-opera").rglob("*.png"))             # Opera Add-ons: at most 800x600
+        self.assertEqual(size(store / "promo" / "logo-300x300.png"), (300, 300))
+        opera = list((store / "screenshots-opera").rglob("*.png"))
         self.assertEqual(len(opera), 4)
         for shot in opera:
             w, h = size(shot)
@@ -118,7 +115,6 @@ class Package(unittest.TestCase):
             code = f.read_text()
             self.assertNotRegex(code, r"\b(fetch|XMLHttpRequest|WebSocket|sendBeacon|eval)\s*\(", f.name)
             self.assertNotIn("new Function", code, f.name)
-        # the only absolute URLs are the support links the user clicks on
         urls = set()
         for f in (DIST / "chrome").rglob("*.js"):
             urls |= set(re.findall(r"https?://[^\s\"'`)]+", f.read_text()))

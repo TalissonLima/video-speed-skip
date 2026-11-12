@@ -11,7 +11,7 @@ import sys
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from ff import SITE, Firefox, prepare_extension, start_static_server  # noqa: E402
+from ff import SITE, Firefox, prepare_extension, start_static_server
 
 failures = []
 
@@ -62,7 +62,6 @@ def main():
     try:
         ff.install(ext)
 
-        # ------------------------------------------------------------------ speed + shortcuts
         print("Content script: speed and shortcuts")
         seed(ff)
         ff.go(f"{SITE}/real-extension.html")
@@ -88,14 +87,13 @@ def main():
         check("toggle: jumps to 2x and back", approx(r["toggleOn"], 2) and approx(r["toggleOff"], r["base"]), r)
         check("X pressed twice moves forward ~20s", r["forward"] > 15, r["forward"])
 
-        # ------------------------------------------------------------------ pause site + normal speed in ads
         print("Content script: pause shortcut and ads at normal speed")
         r = ff.run(PRELUDE + """
           const v = document.getElementById('v'); const out = {};
           out.before = v.playbackRate;
-          kd('KeyP'); await sleep(200);                       // pause the extension on this site
+          kd('KeyP'); await sleep(200);
           kd('KeyD'); await sleep(200); out.whilePaused = v.playbackRate;
-          kd('KeyP'); await sleep(300);                       // resume
+          kd('KeyP'); await sleep(300);
           kd('KeyD'); await sleep(200); out.afterResume = v.playbackRate;
 
           const player = document.createElement('div'); player.className = 'html5-video-player';
@@ -124,7 +122,7 @@ def main():
           player.classList.remove('ad-showing'); await sleep(1600);
           const after = v.playbackRate;
           player.classList.add('ad-showing'); await sleep(1600);
-          player.classList.remove('ad-showing'); v.playbackRate = 1.5;   // the site leaves the ad speed behind, same tick
+          player.classList.remove('ad-showing'); v.playbackRate = 1.5;
           await sleep(1800);
           return {base, during, after, raced: v.playbackRate};
         """)
@@ -133,10 +131,9 @@ def main():
         check("a site that resets the rate as the ad ends does not change your speed", approx(r["raced"], r["base"]), r)
         kept = stored(ff, "['siteSpeeds']")
         check("...and your saved speed is untouched", approx((kept.get("siteSpeeds") or {}).get("localhost"), r["base"]), kept)
-        ff.go(f"{SITE}/real-extension.html")   # (reading storage navigated away)
+        ff.go(f"{SITE}/real-extension.html")
         time.sleep(1.5)
 
-        # ------------------------------------------------------------------ skip buttons
         print("Content script: skip buttons")
         r = ff.run(PRELUDE + """
           const out = {}; const clicks = {};
@@ -148,10 +145,10 @@ def main():
           out.first = {...clicks};
           out.focused = document.activeElement && document.activeElement.id;
           for (const id of ['fake', 'generic']) document.getElementById(id).hidden = true;
-          kd('KeyK'); await sleep(200);                       // ad skipping OFF
+          kd('KeyK'); await sleep(200);
           document.getElementById('generic').hidden = false; for (const k in clicks) delete clicks[k];
           await sleep(1600); out.whileOff = {...clicks};
-          kd('KeyK'); await sleep(2600);                      // ON again
+          kd('KeyK'); await sleep(2600);
           out.backOn = {...clicks};
           return out;
         """)
@@ -164,7 +161,6 @@ def main():
         check("skip shortcut turns clicking off", not r["whileOff"].get("generic"), r["whileOff"])
         check("...and on again", r["backOn"].get("generic", 0) >= 1, r["backOn"])
 
-        # ------------------------------------------------------------------ intro skip when enabled
         seed(ff, skip_intro=True)
         ff.go(f"{SITE}/real-extension.html")
         time.sleep(1.5)
@@ -179,10 +175,6 @@ def main():
         check("intro button is clicked when enabled", r.get("intro", 0) >= 1, r)
         check("...but not unrelated buttons", "nope" not in r, r)
 
-        # ------------------------------------------------------------------ YouTube: never click, never seek
-        # YouTube's player (base.js) treats a Skip click with isTrusted === false as an "abnormality" and
-        # reports it; seeking inside an ad is reported too. So on YouTube-like markup we must not send any
-        # scripted event: only put focus on the button, and let a REAL Enter key press skip the ad.
         print("Content script: YouTube-style skip button (no scripted clicks, no seeking)")
         YT = PRELUDE + """
           const v = document.getElementById('v');
@@ -196,7 +188,7 @@ def main():
             time.sleep(1.5)
             ff.run(PRELUDE + "await sleep(4500);")
             r, st = ff.run(YT), stored(ff, "['skipCount']")
-            ff.go(f"{SITE}/fake-youtube.html?mode={mode}")   # (reading storage navigated away: start again for the Enter test)
+            ff.go(f"{SITE}/fake-youtube.html?mode={mode}")
             time.sleep(1.5)
             ff.run(PRELUDE + "await sleep(3000);")
             check(f"{mode}: no scripted click is ever sent", r["clicks"] == 0 and not r["events"], r)
@@ -204,13 +196,12 @@ def main():
             check(f"{mode}: the Skip button gets keyboard focus", r["focused"] == "skip", r)
             check(f"{mode}: nothing is counted as skipped", not st.get("skipCount"), st)
             if mode == "strict":
-                ff.press("\ue007")  # a real Enter key press: a trusted event
+                ff.press("\ue007")
                 time.sleep(0.8)
                 r2 = ff.run(YT)
                 check("the user's own Enter (a trusted event) skips the ad",
                       r2["clicks"] == 1 and not r2["adShowing"] and not any(e.endswith("*") for e in r2["events"]), r2)
 
-        # ------------------------------------------------------------------ lazy start
         print("Content script: stays idle until a video exists")
         seed(ff)
         ff.go(f"{SITE}/novideo.html")
@@ -223,14 +214,13 @@ def main():
         """)
         check("video appears: the extension wakes up and clicks", woke >= 1, woke)
 
-        # ------------------------------------------------------------------ shadow DOM video
         print("Content script: video inside a shadow root")
         ff.go(f"{SITE}/novideo.html")
         time.sleep(1.5)
         r = ff.run(PRELUDE + """
           const host = document.createElement('x-player'); document.body.append(host);
           host.attachShadow({mode: 'open'}).innerHTML = '<video muted loop width="300" height="170" src="/tests/silence.wav"></video>';
-          await sleep(2600);                                   // discovery runs on a throttled timer
+          await sleep(2600);
           const v = host.shadowRoot.querySelector('video');
           await v.play(); await sleep(300);
           const before = v.playbackRate;
@@ -239,27 +229,24 @@ def main():
         """)
         check("shortcut controls a video in a shadow root", approx(r["after"], r["before"] + 0.1), r)
 
-        # ------------------------------------------------------------------ live streams (the decisions)
-        # The page can't fake a live stream for the extension (it sees the browser's own values), so the
-        # decisions are tested as pure functions with plain objects.
         print("Live streams: decisions")
         ff.go(f"{SITE}/live-logic.html")
         r = ff.run("""
           const L = VSS.live; const out = {};
-          out.far = L.decide(110, false);          // watching far behind on purpose
-          out.near = L.decide(20, false);          // a few seconds behind
-          out.caught = L.decide(1, true);          // caught up
-          out.keep = L.decide(20, true);           // still catching up
-          out.drifted = L.decide(80, true);        // fell far behind while catching up
+          out.far = L.decide(110, false);
+          out.near = L.decide(20, false);
+          out.caught = L.decide(1, true);
+          out.keep = L.decide(20, true);
+          out.drifted = L.decide(80, true);
           out.unknownIdle = L.decide(NaN, false);
           out.unknownBoost = L.decide(NaN, true);
           out.edge30 = L.edge({length: 1, end: () => 30});
           out.edgeNone = [Number.isNaN(L.edge({length: 0})), Number.isNaN(L.edge(null))];
           const S = VSS.seek;
-          out.seekSum = S.accumulate(10, 10, 500);                     // quick presses add up: 20
-          out.seekReset = S.accumulate(30, 10, 3500);                  // a pause of more than 3 s starts over: 10
-          out.seekNet = S.accumulate(10, -10, 1000);                   // opposite direction: net 0
-          out.seekFirst = S.accumulate(0, 10, 1e9);                    // first press ever
+          out.seekSum = S.accumulate(10, 10, 500);
+          out.seekReset = S.accumulate(30, 10, 3500);
+          out.seekNet = S.accumulate(10, -10, 1000);
+          out.seekFirst = S.accumulate(0, 10, 1e9);
           out.labels = [S.label(30), S.label(-20), S.label(0), S.label(2.5)];
           return out;
         """)
@@ -274,7 +261,6 @@ def main():
         check("seek badge: a pause longer than 3 s starts over", r["seekReset"] == 10 and r["seekFirst"] == 10, r)
         check("seek badge: opposite direction nets out", r["seekNet"] == 0 and r["labels"][1:] == ["−20s", "0s", "+2.5s"], r)
 
-        # ------------------------------------------------------------------ always-visible badge
         print("Content script: always-visible badge")
         seed(ff, extra="overlayAlways: true, overlayPos: 'mc', overlayOpacity: 0.5,")
         ff.go(f"{SITE}/real-extension.html")
@@ -288,7 +274,7 @@ def main():
                        cx: b.left + b.width / 2, cy: b.top + b.height / 2, transform: host.style.transform};
           const text = () => host.shadowRoot.querySelector('.b').textContent;
           out.speedText = text();
-          kd('KeyX'); kd('KeyX'); kd('KeyX'); await sleep(700);          // longer than one refresh tick (400 ms)
+          kd('KeyX'); kd('KeyX'); kd('KeyX'); await sleep(700);
           out.seekText = text();
           await sleep(1800);
           out.backText = text();
@@ -300,7 +286,6 @@ def main():
         check("...and keeps the summed seek (3 x 10 s = +30s) instead of overwriting it", r.get("seekText") == "+30s", r.get("seekText"))
         check("...then shows the speed again", r.get("backText") == "1×", r.get("backText"))
 
-        # ------------------------------------------------------------------ default keys vs. the big players
         print("Default shortcuts")
         ff.go(f"{SITE}/live-logic.html")
         r = ff.run("""
@@ -328,9 +313,9 @@ def main():
           const k = (action, value, code) => ({action, value, code, label: '', ctrl: false, alt: false, shift: false});
           await browser.storage.local.set({shortcuts: [k('slower', 0.1, 'KeyS'), k('faster', 0.1, 'KeyD'), k('setSpeed', 1, 'KeyR'),
                                                        k('rewind', 10, 'KeyZ'), k('forward', 10, 'KeyX')]});
-          const migrated = (await VSS.load()).shortcuts.length;                 // the original five defaults
+          const migrated = (await VSS.load()).shortcuts.length;
           await browser.storage.local.set({shortcuts: [k('slower', 0.1, 'KeyS')]});
-          const custom = (await VSS.load()).shortcuts.length;                   // a list the user made
+          const custom = (await VSS.load()).shortcuts.length;
           return {migrated, custom};
         """)
         check("an install still on the old defaults moves to the new ones", r["migrated"] == 12, r)
@@ -341,18 +326,17 @@ def main():
           const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
           await browser.storage.local.clear(); await browser.storage.sync.clear();
           await browser.storage.local.set({presets: [1, 2, 4], overlayOpacity: 0.4});
-          const mode = await VSS.setSync(true);                                  // nothing there yet: this device uploads
+          const mode = await VSS.setSync(true);
           const first = await browser.storage.sync.get(['presets', 'overlayOpacity']);
-          await VSS.save({overlayOpacity: 0.3}); await sleep(1500);              // pushes are debounced
+          await VSS.save({overlayOpacity: 0.3}); await sleep(1500);
           const second = await browser.storage.sync.get('overlayOpacity');
-          await browser.storage.sync.set({presets: [1, 3]}); await sleep(600);   // "another device" changes a setting
+          await browser.storage.sync.set({presets: [1, 3]}); await sleep(600);
           const pulled = await browser.storage.local.get('presets');
           const noStats = await browser.storage.sync.get(['stats', 'skipCount', 'savedSeconds']);
           await VSS.setSync(false);
           await browser.storage.sync.set({presets: [9]}); await sleep(600);
-          const afterOff = await browser.storage.local.get('presets');           // no longer followed
+          const afterOff = await browser.storage.local.get('presets');
           await browser.storage.sync.clear();
-          // enabling on a device when another one already saved settings loads them
           await browser.storage.sync.set({presets: [5]}); await browser.storage.local.set({presets: [1]});
           const mode2 = await VSS.setSync(true);
           const loaded = await browser.storage.local.get('presets');
@@ -368,7 +352,6 @@ def main():
         check("sync on with settings already saved elsewhere: they are loaded here",
               r["mode2"] == "pulled" and r["loaded"].get("presets") == [5], r)
 
-        # ------------------------------------------------------------------ options page
         print("Options page")
         ff.open_ext("options/options.html", 1100, 800)
         r = ff.run(PRELUDE + """
@@ -406,7 +389,6 @@ def main():
         check("the ad speed field is disabled while its switch is off", r["adSpeedDisabled"], r)
         check("live and badge shortcuts are offered", "goLive" in r["actions"] and "toggleAlways" in r["actions"], r["actions"])
 
-        # ------------------------------------------------------------------ reorder shortcuts + confirmation dialog
         print("Options page: reordering and confirmation")
         seed_defaults = "await browser.storage.local.clear();"
         ff.ext_run(seed_defaults)
@@ -415,20 +397,17 @@ def main():
           document.querySelector('[data-nav="shortcuts"]').click(); await sleep(150);
           const order = () => [...document.querySelectorAll('#sc .keybtn')].map((b) => b.textContent);
           const rows = () => [...document.querySelectorAll('#sc .sc-row')];
-          const out = {start: order().slice(0, 4), count: order().length};      // A D R H ...
-          // keyboard: the handle of the 3rd row (R) + ArrowUp
+          const out = {start: order().slice(0, 4), count: order().length};
           document.querySelector('#sc [data-index="2"] .grip').dispatchEvent(
             new KeyboardEvent('keydown', {key: 'ArrowUp', bubbles: true, cancelable: true}));
-          await sleep(150); out.afterKey = order().slice(0, 4);                  // A R D H
-          // mouse: drag the first row (A) and drop it after the 3rd (D)
+          await sleep(150); out.afterKey = order().slice(0, 4);
           const dt = new DataTransfer();
           rows()[0].dispatchEvent(new DragEvent('dragstart', {bubbles: true, dataTransfer: dt}));
           const target = rows()[2], box = target.getBoundingClientRect();
           target.dispatchEvent(new DragEvent('dragover', {bubbles: true, cancelable: true, dataTransfer: dt, clientY: box.bottom - 2}));
           target.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: dt, clientY: box.bottom - 2}));
-          await sleep(200); out.afterDrop = order().slice(0, 4);                 // R D A H
+          await sleep(200); out.afterDrop = order().slice(0, 4);
           out.saved = (await browser.storage.local.get('shortcuts')).shortcuts.map((s) => s.code).slice(0, 4);
-          // "Restore defaults" asks first
           const dialog = document.getElementById('confirm');
           document.getElementById('restoreSc').click(); await sleep(200); out.asked = dialog.open;
           document.getElementById('confirmNo').click(); await sleep(200);
@@ -447,7 +426,6 @@ def main():
         check("cancelling the dialog changes nothing", r["stayed"], r)
         check("confirming restores the defaults", r["restored"] == ["A", "D", "R", "H"] and r["restoredCount"] == 12, r)
 
-        # ------------------------------------------------------------------ popup
         print("Popup")
         ff.open_ext("popup/popup.html", 360, 640)
         r = ff.run(PRELUDE + """
@@ -457,13 +435,12 @@ def main():
                   height: document.body.offsetHeight, hasGear: !!q('#gear'), tip: q('#tip').textContent.length > 0};
         """)
         ff.frame(None)
-        # the step before cleared the storage, so the popup shows the 5 default quick speeds
         check("popup renders chips, gear and shortcut tip", r["chips"] == 5 and r["hasGear"] and r["tip"], r)
         check("popup fits the 600px browser limit", r["height"] <= 600, r["height"])
     finally:
         ff.quit()
         server.shutdown()
-        shutil.rmtree(tmp, ignore_errors=True)  # the temp copy this script created under $HOME
+        shutil.rmtree(tmp, ignore_errors=True)
 
     print()
     if failures:

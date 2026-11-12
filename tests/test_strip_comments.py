@@ -9,7 +9,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
-from strip_comments import strip_css, strip_html, strip_js  # noqa: E402
+from strip_comments import strip_css, strip_html, strip_html_page, strip_js, strip_py
 
 
 class StripJs(unittest.TestCase):
@@ -76,7 +76,7 @@ class StripJs(unittest.TestCase):
     def test_real_sources_keep_all_code_lines(self):
         """Stripping may only remove comments: every non-comment line of the source must survive."""
         for f in (ROOT / "src").rglob("*.js"):
-            def norm(s):  # ignore comments and whitespace differences
+            def norm(s):
                 s = re.sub(r"/\*.*?\*/", "", s)
                 s = re.sub(r"\s+//\s.*$", "", s)
                 return re.sub(r"\s+", " ", s).strip()
@@ -85,7 +85,6 @@ class StripJs(unittest.TestCase):
             out = [norm(ln) for ln in strip_js(src).splitlines()]
             code = [norm(ln) for ln in src.splitlines()
                     if ln.strip() and not ln.strip().startswith(("//", "/*", "*"))]
-            # every code line of the source must appear, in order, in the stripped output
             pos = 0
             for ln in code:
                 if not ln:
@@ -104,6 +103,27 @@ class SourceHasNoComments(unittest.TestCase):
         offenders = [str(f.relative_to(ROOT)) for f in sorted((ROOT / "src").rglob("*"))
                      if f.suffix in strippers and strippers[f.suffix](f.read_text()) != f.read_text()]
         self.assertEqual(offenders, [], "comments found; run: python3 scripts/strip_src.py")
+
+    def test_tests_have_no_comments(self):
+        offenders = []
+        for f in sorted((ROOT / "tests").rglob("*")):
+            if f.suffix == ".py" and strip_py(f.read_text()) != f.read_text():
+                offenders.append(str(f.relative_to(ROOT)))
+            if f.suffix == ".html" and strip_html_page(f.read_text()) != f.read_text():
+                offenders.append(str(f.relative_to(ROOT)))
+        self.assertEqual(offenders, [], "comments found; run: python3 scripts/strip_src.py")
+
+    def test_python_stripper_keeps_strings_and_the_shebang(self):
+        code = '#!/usr/bin/env python3\nx = "# not a comment"  # gone\n# whole line\nprint(x)\n'
+        self.assertEqual(strip_py(code), '#!/usr/bin/env python3\nx = "# not a comment"\nprint(x)\n')
+
+    def test_html_page_stripper_reaches_inline_script_and_style(self):
+        page = "<!-- a -->\n<style>/* b */ p { color: red; }</style>\n<script>\n// c\nlet u = 'http://x.y';\n</script>\n"
+        out = strip_html_page(page)
+        self.assertNotIn("a --", out)
+        self.assertNotIn("b */", out)
+        self.assertNotIn("// c", out)
+        self.assertIn("http://x.y", out)
 
 
 class StripCssHtml(unittest.TestCase):

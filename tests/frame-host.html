@@ -1,6 +1,5 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>frame host</title>
-<!-- Used by tests/e2e: loads the URL given in the query string inside a full-window iframe. -->
 <body style="margin:0;background:#888"><iframe id="f" style="border:0;width:100vw;height:100vh;display:block"></iframe>
 <script>document.getElementById('f').src = location.search.slice(1);</script>

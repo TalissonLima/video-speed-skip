@@ -1,10 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Fake YouTube ad player</title>
-<!-- Used by tests/e2e. Imitates YouTube's skippable ad (the "ad-showing" player marks it as YouTube):
-       ?mode=strict   ignores clicks made by scripts (isTrusted === false), like YouTube's player does
-       ?mode=lenient  accepts any click
-     The ad ends (button hidden, "ad-showing" removed) when the button click is accepted. -->
 <div id="player" class="html5-video-player ad-showing">
   <video id="v" muted width="480" height="270" src="silence.wav"></video>
   <button id="skip" class="ytp-skip-ad-button">Skip</button>
@@ -19,7 +15,7 @@
   const endAd = () => { player.classList.remove('ad-showing'); skip.hidden = true; };
 
   for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup']) {
-    skip.addEventListener(type, (e) => window.__events.push(type + (e.isTrusted ? '' : '*'))); // * = made by a script
+    skip.addEventListener(type, (e) => window.__events.push(type + (e.isTrusted ? '' : '*')));
   }
   skip.addEventListener('click', (e) => {
     window.__clicks++;

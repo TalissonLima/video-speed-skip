@@ -49,7 +49,6 @@ class I18n(unittest.TestCase):
         self.assertEqual(unused, [])
 
     def test_no_platform_names_in_descriptions(self):
-        # the UI explains behaviour in general terms (it may name browsers for sync, but not video sites)
         for key_line in re.findall(r"^    (?:\w+Desc|\w+Help|\w+Hint): .*$", I18N, flags=re.M):
             for name in ("YouTube", "Netflix", "Twitch", "Crunchyroll", "TikTok"):
                 self.assertNotIn(name, key_line, key_line[:60])

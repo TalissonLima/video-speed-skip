@@ -13,7 +13,7 @@ import time
 import urllib.parse
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from ff import EXT, ROOT, SITE, Firefox, prepare_extension, start_static_server  # noqa: E402
+from ff import EXT, ROOT, SITE, Firefox, prepare_extension, start_static_server
 
 OUT = ROOT / "docs" / "store" / "screenshots"
 
@@ -34,7 +34,6 @@ await browser.storage.local.set({
   siteSpeeds: { 'www.youtube.com': 1.5, 'vimeo.com': 1.25, 'coursera.org': 2, 'twitch.tv': 1.1 },
   skipCount: 128, savedSeconds: 19800,
   stats: { daily, sites: { 'www.youtube.com': { s: 12000, a: 90 }, 'coursera.org': { s: 5400, a: 0 }, 'vimeo.com': { s: 1800, a: 12 }, 'twitch.tv': { s: 600, a: 26 } } },
-  // the shortcuts are left out on purpose: the screenshots show the real defaults
 });
 return true;
 """
@@ -44,7 +43,7 @@ await new Promise(r => setTimeout(r, 600));
 const q = (s) => document.querySelector(s); const T = (key) => VSS_I18N['__LANG__'][key];
 q('#siteHost').textContent = 'www.youtube.com'; q('#siteState').textContent = T('siteActive');
 q('#dot').className = 'dot on'; q('#siteOn').checked = true; q('#siteOn').disabled = false;
-if ('__LANG__' !== 'pt') q('#pix').hidden = true;   // the PIX button is only offered to users in Brazil
+if ('__LANG__' !== 'pt') q('#pix').hidden = true;
 q('#speedLabel').textContent = T('speedFor'); q('#speedCard').classList.remove('off');
 q('#value').textContent = '1.50×'; q('#slider').value = 1.5;
 document.querySelectorAll('#chips button').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === 1.5));
@@ -55,14 +54,14 @@ return true;
 def popup_scene(ff, lang, out, scale=1.0):
     """The popup next to a headline (1280x800 * scale)."""
     headline, sub = COPY[lang]
-    ff.size(1500, 900)  # bigger than the scene: only the element is photographed, so the window size never matters
+    ff.size(1500, 900)
     ff.go(f"{SITE}/store-popup.html?" + urllib.parse.urlencode(
         {"src": f"{EXT}/popup/popup.html", "h": headline, "p": sub, "s": scale}))
     time.sleep(1.5)
     ff.frame(0)
     ff.run(POPUP_AS_ON_YOUTUBE.replace("__LANG__", lang))
     ff.frame(None)
-    time.sleep(0.6)  # let the switch/chip transitions finish before the picture is taken
+    time.sleep(0.6)
     ff.shot_element("#box", out)
 
 
@@ -87,7 +86,6 @@ def main():
     try:
         ff.install(ext)
 
-        # Chrome Web Store / Edge / Firefox: 1280x800, one folder per language
         for lang in ("en", "pt", "es"):
             folder = OUT / lang
             folder.mkdir(parents=True, exist_ok=True)
@@ -96,7 +94,6 @@ def main():
             options_scenes(ff, folder)
             print(f"{lang}: 4 screenshots -> {folder.relative_to(ROOT)}")
 
-        # promo tiles (Chrome Web Store and Edge: the small one is recommended, the marquee optional; not localizable in Chrome)
         promo = OUT.parent / "promo"
         promo.mkdir(parents=True, exist_ok=True)
         ff.size(1500, 900)
@@ -104,13 +101,11 @@ def main():
             ff.go(f"{SITE}/store-promo.html?w={w}&h={h}")
             time.sleep(0.8)
             ff.shot_element("#tile", promo / f"{name}.png")
-        # Edge Add-ons asks for a 300x300 logo
         ff.go(f"{SITE}/store-logo.html")
         time.sleep(0.5)
         ff.shot_element("#logo", promo / "logo-300x300.png")
         print(f"promo tiles and logo -> {promo.relative_to(ROOT)}")
 
-        # Opera Add-ons: screenshots may be at most 800x600 (preferred 612x408), English listing
         opera = OUT.parent / "screenshots-opera" / "en"
         opera.mkdir(parents=True, exist_ok=True)
         ff.ext_run(SAMPLE.replace("__LANG__", "en"))

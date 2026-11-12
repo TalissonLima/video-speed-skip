@@ -138,3 +138,60 @@ def strip_css(src: str) -> str:
 def strip_html(src: str) -> str:
     src = re.sub(r"^[ \t]*<!--.*?-->[ \t]*\n", "", src, flags=re.S | re.M)
     return re.sub(r"[ \t]*<!--.*?-->", "", src, flags=re.S)
+
+
+import ast
+import io
+import tokenize
+
+
+def strip_py(src: str) -> str:
+    """Remove every `#` comment from Python source (keeps a shebang). Uses the tokenizer, so a '#' inside a string is safe."""
+    lines = src.splitlines(keepends=True)
+    comments = [t for t in tokenize.generate_tokens(io.StringIO(src).readline)
+                if t.type == tokenize.COMMENT and not (t.start[0] == 1 and t.string.startswith("#!"))]
+    for t in reversed(comments):
+        row, col = t.start
+        line = lines[row - 1]
+        before = line[:col].rstrip()
+        lines[row - 1] = "" if not before.strip() else before + ("\n" if line.endswith("\n") else "")
+    out = "".join(lines)
+    return re.sub(r"\n{4,}", "\n\n\n", out)
+
+
+def strip_py_js_strings(src: str) -> str:
+    """The tests keep JavaScript inside triple-quoted Python strings: strip the JS comments in those (docstrings are left alone)."""
+    tree = ast.parse(src)
+    docstrings = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.body:
+            first = node.body[0]
+            if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
+                docstrings.add(id(first.value))
+    lines = src.splitlines(keepends=True)
+    offsets = [0]
+    for line in lines:
+        offsets.append(offsets[-1] + len(line))
+
+    def at(row, col_bytes):
+        return offsets[row - 1] + len(lines[row - 1].encode()[:col_bytes].decode())
+
+    edits = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings \
+                and node.end_lineno > node.lineno:
+            start, end = at(node.lineno, node.col_offset), at(node.end_lineno, node.end_col_offset)
+            literal = src[start:end]
+            quote = literal[:3]
+            if quote in ('"""', "'''") and literal.endswith(quote) and re.search(r"(^|\s)//|/\*", literal):
+                edits.append((start, end, quote + strip_js(literal[3:-3]) + quote))
+    for start, end, new in sorted(edits, reverse=True):
+        src = src[:start] + new + src[end:]
+    return src
+
+
+def strip_html_page(src: str) -> str:
+    """A whole HTML page: its comments, plus the comments inside its inline <style> and <script> blocks."""
+    src = strip_html(src)
+    src = re.sub(r"<style>(.*?)</style>", lambda m: "<style>" + strip_css(m.group(1)) + "</style>", src, flags=re.S)
+    return re.sub(r"<script>(.*?)</script>", lambda m: "<script>" + strip_js(m.group(1)) + "</script>", src, flags=re.S)
