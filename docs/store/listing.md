@@ -144,6 +144,7 @@ Si te ahorra tiempo, puedes invitarme a un café: https://buymeacoffee.com/talis
 - **Listing:** name `Video Speed & Skip` (it must not contain "Opera"), short description (plain text, 132 characters at most)
   and the English long description above, icon `src/icons/icon-128.png`, category Productivity, license MIT.
 - **Screenshots:** at most **800x600** (preferred 612x408): use `docs/store/screenshots-opera/en/`, which are 800x500.
+- **Promotional image (optional, 300x188):** `docs/store/promo/opera-300x188.png`; Opera may use it if the editors feature the extension.
 - **Optional:** support page `https://github.com/TalissonLima/video-speed-skip/issues` and the privacy policy URL.
 
 ## Screenshots

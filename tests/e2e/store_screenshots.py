@@ -97,7 +97,7 @@ def main():
         promo = OUT.parent / "promo"
         promo.mkdir(parents=True, exist_ok=True)
         ff.size(1500, 900)
-        for name, (w, h) in {"small-440x280": (440, 280), "marquee-1400x560": (1400, 560)}.items():
+        for name, (w, h) in {"small-440x280": (440, 280), "marquee-1400x560": (1400, 560), "opera-300x188": (300, 188)}.items():
             ff.go(f"{SITE}/store-promo.html?w={w}&h={h}")
             time.sleep(0.8)
             ff.shot_element("#tile", promo / f"{name}.png")

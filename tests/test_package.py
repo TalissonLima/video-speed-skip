@@ -102,6 +102,7 @@ class Package(unittest.TestCase):
             self.assertEqual(size(shot), (1280, 800), shot.relative_to(store))
         self.assertEqual(size(store / "promo" / "small-440x280.png"), (440, 280))
         self.assertEqual(size(store / "promo" / "marquee-1400x560.png"), (1400, 560))
+        self.assertEqual(size(store / "promo" / "opera-300x188.png"), (300, 188))
         self.assertEqual(len(list((store / "screenshots").rglob("*.png"))), 12)
         self.assertEqual(size(store / "promo" / "logo-300x300.png"), (300, 300))
         opera = list((store / "screenshots-opera").rglob("*.png"))
