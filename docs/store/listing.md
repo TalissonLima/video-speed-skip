@@ -129,40 +129,6 @@ Suggested captions:
 3. **Shortcuts:** "Your keys, your speeds"
 4. **Speed:** "Each site remembers its speed"
 
-## What's new (0.7.0)
+## Release notes (1.0.0)
 
-- New default keys that avoid the ones YouTube, Netflix, Twitch, Crunchyroll and TikTok use; hold for 3×, toggle speed, badge on/off, ±30 s and ±60 s.
-- Ads: your speed always returns when the ad ends, even if the site resets it at that moment.
-- The always-visible badge no longer erases the summed seek (+30s). Default opacity is 75%.
-- "Jump to live" also goes back to 1×.
-- Optional settings sync across devices (off by default; settings only).
-- Shortcuts page grouped by kind, with the add/restore buttons on top; dependent options are dimmed when their switch is off.
-
-## What's new (0.6.0)
-
-- YouTube: the extension no longer clicks or seeks the ad. YouTube's player rejects and reports scripted clicks, so the
-  Skip button is highlighted instead (⏭ ⏎ badge) and your own Enter skips the ad.
-- Removed the experimental "jump to the end of the ad" option and the "skips ignored" warning.
-- Other sites still get a click, now verified before it is counted.
-
-## What's new (0.5.1)
-
-- Quick rewind/forward presses add up on the badge (3 × 10 s shows +30s) and start over after 3 s without pressing.
-- The badge position is picked among the four corners.
-
-## What's new (0.5.0)
-
-- Always-visible speed badge (with a shortcut) and adjustable opacity.
-- Optional ad speed (1.2× by default, off by default). Voices are always kept natural: the pitch option is gone.
-- Live streams: shortcut to jump to the live edge and optional automatic catch-up.
-
-## What's new (0.4.1)
-
-- Fix: ad skips are now verified. A skip the site ignored is no longer counted; the popup and options page say so.
-
-## What's new (0.4.0)
-
-- Ads play at normal speed and your speed returns afterwards.
-- Shortcut to pause the extension on the current site.
-- Works with videos inside shadow DOM players; lighter on pages without video.
-- Dashboard, options page, per-site speed, intro skipping and Spanish (from 0.2–0.3).
+- First public release.

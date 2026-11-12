@@ -85,6 +85,15 @@ class Package(unittest.TestCase):
                         for line in code.splitlines():
                             self.assertFalse(line.lstrip().startswith(("//", "/*")), f"comment left in {name}: {line[:60]}")
 
+    def test_source_archive_for_firefox_review(self):
+        source = DIST / f"video-speed-skip-source-v{self.version}.zip"
+        self.assertTrue(source.exists(), source.name)
+        with zipfile.ZipFile(source) as z:
+            names = z.namelist()
+        for needed in ("scripts/build.py", "scripts/strip_comments.py", "src/manifest.json", "README.md", "LICENSE"):
+            self.assertIn(needed, names)
+        self.assertFalse([n for n in names if n.startswith(("dist/", "docs/store/screenshots/", ".git/"))])
+
     def test_no_remote_code_or_network_in_the_package(self):
         for f in (DIST / "chrome").rglob("*.js"):
             code = f.read_text()

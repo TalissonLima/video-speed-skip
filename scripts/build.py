@@ -39,3 +39,14 @@ for target in ("chrome", "firefox"):
     zip_path = dist / f"video-speed-skip-{target}-v{version}.zip"
     subprocess.run(["zip", "-qr", str(zip_path), "."], cwd=out, check=True)
     print("built", zip_path.relative_to(root))
+
+# Source archive for Firefox Add-ons review (asked for when the package was processed, here: comments stripped).
+try:
+    listed = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=root,
+                            capture_output=True, text=True, check=True).stdout.splitlines()
+    files = [f for f in listed if (root / f).is_file() and not f.startswith(("docs/store/screenshots/", "docs/store/promo/"))]
+    source_zip = dist / f"video-speed-skip-source-v{version}.zip"
+    subprocess.run(["zip", "-q", str(source_zip), "-@"], cwd=root, input="\n".join(files), text=True, check=True)
+    print("built", source_zip.relative_to(root))
+except (OSError, subprocess.CalledProcessError):
+    print("skipped the source archive (not a git checkout)", file=sys.stderr)

@@ -1,6 +1,6 @@
 # Privacy Policy — Video Speed & Skip
 
-_Last updated: 2026-11-11 · Política de privacidade em português logo abaixo._
+_Last updated: 2026-11-12 · Política de privacidade em português logo abaixo._
 
 **Short version: Video Speed & Skip does not collect, transmit, sell or share any data. Everything stays on your device.** The only exception is the optional settings sync below, which your browser performs itself.
 

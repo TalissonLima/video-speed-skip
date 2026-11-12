@@ -1,6 +1,6 @@
 # Checklist de publicação (Chrome Web Store + Firefox Add-ons)
 
-Estado verificado em **v0.7.2**. O que está marcado já foi feito e é conferido pelos testes; o resto depende de você.
+Estado verificado em **v1.0.0** (candidata à primeira versão). O que está marcado já foi feito e é conferido pelos testes; o resto depende de você.
 
 ## 1. Antes de enviar
 
@@ -20,7 +20,7 @@ Estado verificado em **v0.7.2**. O que está marcado já foi feito e é conferid
   - [ ] Uma live: "ir para o ao vivo" e, se quiser, "alcançar o ao vivo".
   - [ ] Netflix / Prime / outro streaming: intro (opcional) e atalhos sem conflito.
 - [ ] **Tornar o repositório público** (a URL da política de privacidade precisa abrir sem login).
-- [ ] Decidir a versão inicial (sugestão: `1.0.0` no primeiro envio; mudar em `src/manifest.json`).
+- [x] Versão inicial `1.0.0` (em `src/manifest.json`).
 
 ## 2. Chrome Web Store
 
@@ -34,7 +34,7 @@ Estado verificado em **v0.7.2**. O que está marcado já foi feito e é conferid
 
 1. Conta gratuita em addons.mozilla.org.
 2. Enviar `dist/video-speed-skip-firefox-v<versão>.zip` (o id `video-speed-skip@talissonlima.github.io` já está no pacote; não pode mudar depois).
-3. Código-fonte: o validador pede quando o pacote passou por processamento (aqui, só a remoção de comentários). Gerar com `git archive --format=zip -o source.zip HEAD` e informar o comando de build (`python3 scripts/build.py`).
+3. Código-fonte: o validador pede quando o pacote passou por processamento (aqui, só a remoção de comentários). Enviar `dist/video-speed-skip-source-v<versão>.zip` (gerado junto com os pacotes) e informar o comando de build (`python3 scripts/build.py`).
 4. Nota para o revisor (em `listing.md`): não precisa de conta; abrir qualquer página com `<video>` e usar as teclas `D` / `A`.
 
 ## 4. Depois de publicar
