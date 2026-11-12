@@ -1,10 +1,10 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Fake YouTube ad player</title>
-<!-- Used by tests/e2e. Imitates YouTube's skippable ad:
-       ?mode=strict   ignores clicks made by scripts (isTrusted === false), like YouTube does
+<!-- Used by tests/e2e. Imitates YouTube's skippable ad (the "ad-showing" player marks it as YouTube):
+       ?mode=strict   ignores clicks made by scripts (isTrusted === false), like YouTube's player does
        ?mode=lenient  accepts any click
-     The ad ends (button hidden, "ad-showing" removed) when the button is accepted or the video reaches its end. -->
+     The ad ends (button hidden, "ad-showing" removed) when the button click is accepted. -->
 <div id="player" class="html5-video-player ad-showing">
   <video id="v" muted width="480" height="270" src="silence.wav"></video>
   <button id="skip" class="ytp-skip-ad-button">Skip</button>
@@ -13,20 +13,8 @@
   const mode = new URLSearchParams(location.search).get('mode') || 'strict';
   const player = document.getElementById('player');
   const skip = document.getElementById('skip');
-  const video = document.getElementById('v');
   window.__clicks = 0;
   window.__events = [];
-
-  // ?live=1  marks the player as a live stream (YouTube adds "ytp-live" to it)
-  // ?two=1   puts the stream's own (paused) <video> before the ad's, like a live player may do
-  const qs = new URLSearchParams(location.search);
-  if (qs.get('live')) player.classList.add('ytp-live');
-  if (qs.get('two')) {
-    const content = document.createElement('video');
-    content.id = 'content'; content.muted = true; content.src = 'silence.wav';
-    player.prepend(content);
-    video.play().catch(() => {}); // the ad is the one playing
-  }
 
   const endAd = () => { player.classList.remove('ad-showing'); skip.hidden = true; };
 
@@ -37,7 +25,4 @@
     window.__clicks++;
     if (mode === 'lenient' || e.isTrusted) endAd();
   });
-  for (const type of ['timeupdate', 'seeked', 'ended']) {
-    video.addEventListener(type, () => { if (video.duration && video.currentTime >= video.duration - 0.5) endAd(); });
-  }
 </script>

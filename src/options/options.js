@@ -322,12 +322,6 @@
     });
   }
 
-  function renderNotice() {
-    $("#skipNotice").hidden = !(cfg.skipFails > 0);
-    $("#skipNoticeTitle").textContent = t("skipBlocked", { n: cfg.skipFails });
-  }
-  $("#clearFails").onclick = () => { save({ skipFails: 0 }); renderNotice(); };
-
   // A number next to a switch (ad speed, live catch-up speed): validated, saved on change.
   function numberSetting(id, key, lo, hi) {
     const input = $("#" + id);
@@ -341,7 +335,7 @@
   numberSetting("adSpeed", "adSpeed", MIN, MAX);
   numberSetting("liveSpeed", "liveCatchUpSpeed", 1.05, 2);
 
-  for (const key of ["autoSkip", "skipIntro", "adNormalSpeed", "adSkipFallback", "liveCatchUp", "overlay", "overlayAlways"]) {
+  for (const key of ["autoSkip", "skipIntro", "adNormalSpeed", "liveCatchUp", "overlay", "overlayAlways"]) {
     const box = $("#" + key);
     box.checked = cfg[key];
     box.onchange = () => save({ [key]: box.checked });
@@ -387,7 +381,7 @@
    * ================================================================== */
   const EXPORT_KEYS = ["speed", "speedScope", "siteSpeeds", "presets", "shortcuts", "overlay", "overlayPos",
     "overlaySize", "overlayOpacity", "overlayAlways", "autoSkip", "skipIntro", "adNormalSpeed", "adSpeed",
-    "adSkipFallback", "liveCatchUp", "liveCatchUpSpeed", "lang", "disabledSites"];
+    "liveCatchUp", "liveCatchUpSpeed", "lang", "disabledSites"];
   const ENUMS = {
     speedScope: ["site", "global"], overlaySize: ["s", "m", "l"], lang: ["auto", ...ui.LANGS],
     overlayPos: ["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]
@@ -482,7 +476,6 @@
     renderShortcuts();
     renderSpeed();
     renderPaused();
-    renderNotice();
     renderAppearance();
   }
 
@@ -495,7 +488,7 @@
     cfg.stats = { daily: {}, sites: {}, ...cfg.stats };
     if (!$("#dashboard").hidden) renderDashboard();
     if (!$("#speed").hidden) renderSpeed();
-    if (!$("#skip").hidden) { renderPaused(); renderNotice(); }
+    if (!$("#skip").hidden) renderPaused();
   });
 
   renderAll();

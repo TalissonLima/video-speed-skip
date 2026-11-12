@@ -33,8 +33,6 @@
     adSpeed: 1.2,
     liveCatchUp: false,    // on live streams a few seconds behind, play faster until we reach the live edge
     liveCatchUpSpeed: 1.25,
-    adSkipFallback: true,  // experimental (on while testing): if the site ignores the click, jump to the end of the (skippable) ad
-    skipFails: 0,          // ad skips the site ignored (shown as a hint in the popup / options)
     skipIntro: false,      // auto-click "Skip Intro / Recap" on streaming sites
     skipCount: 0,          // lifetime number of ads skipped
     savedSeconds: 0,       // lifetime seconds saved by watching faster than 1x

@@ -386,77 +386,52 @@
   // Ignore buttons we clicked in the last 2s (they may linger while the player closes them).
   const fresh = (el) => Date.now() - (el.__vssClickedAt ?? 0) >= 2000;
 
-  function find(selectors, text) {
+  const findBySelector = (selectors) => {
     for (const el of document.querySelectorAll(selectors)) if (fresh(el) && visible(el)) return el;
+    return null;
+  };
+
+  // Buttons recognised by their label. Anything inside a YouTube player is left to the known-selector
+  // path (and never clicked, see assistSkip below).
+  const findByText = (text) => {
     for (const el of document.querySelectorAll('button,[role="button"]')) {
-      if (fresh(el) && text.test(labelOf(el)) && visible(el)) return el;
+      if (fresh(el) && !el.matches(AD_SELECTORS) && !el.closest(".html5-video-player") &&
+          text.test(labelOf(el)) && visible(el)) return el;
     }
     return null;
-  }
+  };
+
+  const find = (selectors, text) => findBySelector(selectors) ?? findByText(text);
 
   function click(el) {
     el.__vssClickedAt = Date.now();
     el.click();
   }
 
-  // YouTube ignores clicks made by scripts (their events have isTrusted === false), so "we clicked"
-  // does not mean "the ad was skipped". Every ad skip is therefore verified before it is counted,
-  // and when the click is ignored we escalate: fuller pointer events, then (opt-in) jumping to the
-  // end of the ad. Only ever done while the Skip button is showing, i.e. when the ad is skippable.
+  // Why we do NOT click on YouTube. Its player code (base.js) rejects a Skip click whose event is not
+  // trusted: the button's onClick calls a check that treats `event.isTrusted === false` (every click made
+  // by a script) as an "abnormality", does not skip the ad and reports the attempt. Seeking inside an ad
+  // is reported too, so jumping to the end of an ad is out as well.
+  // What a script can honestly do: put keyboard focus on the Skip button, so the user's own Enter or
+  // Space (a trusted event) skips the ad.
+  let hintedBtn = null;
+  function assistSkip(btn) {
+    if (hintedBtn === btn) return; // once per appearance of the button
+    hintedBtn = btn;
+    try { btn.focus({ preventScroll: true }); } catch { /* ignore */ }
+    flash("⏭ ⏎");
+  }
+
+  // Other sites (no such check): click, then make sure the button went away before counting a skip.
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  const gone = (btn) => !btn.isConnected || !visible(btn); // the button vanished: the ad moved on
-
-  function pointerClick(el) {
-    const r = el.getBoundingClientRect();
-    const init = { bubbles: true, cancelable: true, composed: true, view: window, button: 0,
-                   clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
-    for (const [Ctor, type] of [[PointerEvent, "pointerdown"], [MouseEvent, "mousedown"],
-                                [PointerEvent, "pointerup"], [MouseEvent, "mouseup"], [MouseEvent, "click"]]) {
-      el.dispatchEvent(new Ctor(type, init));
-    }
-  }
-
-  // The <video> that is playing the AD. On live streams YouTube may keep the stream in another <video>
-  // inside the same player, so never just take the first one: an ad is short, finite and playing.
-  // And never on a live stream: jumping to the "end" there would throw away the viewer's position.
-  function adVideo() {
-    const player = document.querySelector(AD_PLAYING);
-    if (!player || isLive(null)) return null;
-    return VSS.live.pickAd([...player.querySelectorAll("video")]);
-  }
-
-  async function recordSkipFailure() {
-    try {
-      const { skipFails = 0 } = await api.storage.local.get("skipFails");
-      await VSS.save({ skipFails: skipFails + 1 });
-    } catch { /* extension was reloaded */ }
-  }
+  const gone = (btn) => !btn.isConnected || !visible(btn);
 
   async function skipAd(btn) {
-    const onYouTube = adPlaying();
-    btn.__vssClickedAt = Date.now() + 6000; // keep other scans away from this button while we work on it
+    btn.__vssClickedAt = Date.now() + 3000; // keep other scans away while we verify
     btn.click();
     await wait(900);
-    if (gone(btn)) return recordStats({ ads: 1 });
-    if (!onYouTube) {                       // other sites: a click is all we can do
-      btn.__vssClickedAt = Date.now();
-      return;
-    }
-
-    pointerClick(btn);
-    await wait(900);
-    if (gone(btn)) return recordStats({ ads: 1 });
-
-    if (cfg.adSkipFallback) {
-      const v = adVideo();
-      if (v && Number.isFinite(v.duration) && v.duration > 0) {
-        v.currentTime = v.duration;
-        await wait(1200);
-        if (gone(btn) || !adPlaying()) return recordStats({ ads: 1 });
-      }
-    }
-    btn.__vssClickedAt = Date.now() + 18000; // don't hammer the same ad
-    recordSkipFailure();
+    btn.__vssClickedAt = Date.now();
+    if (gone(btn)) recordStats({ ads: 1 });
   }
 
   // Runs on DOM changes and once a second while the page has a video.
@@ -473,9 +448,12 @@
     }
 
     if (!enabled()) return;
+    if (hintedBtn && (!hintedBtn.isConnected || !visible(hintedBtn))) hintedBtn = null;
     if (cfg.autoSkip) {
-      const btn = find(AD_SELECTORS, AD_TEXT);
-      if (btn) skipAd(btn);
+      const known = findBySelector(AD_SELECTORS); // YouTube & co: never clicked, only highlighted
+      if (known) assistSkip(known);
+      const generic = findByText(AD_TEXT);        // other sites: a verified click
+      if (generic) skipAd(generic);
     }
     if (cfg.skipIntro) {
       const btn = find(INTRO_SELECTORS, INTRO_TEXT);

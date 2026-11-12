@@ -116,6 +116,11 @@ class Firefox:
             raise RuntimeError(result["__error"])
         return result
 
+    def press(self, key):
+        """A REAL (trusted) key press through WebDriver actions, e.g. press("\ue007") for Enter."""
+        call("POST", self.p("/actions"), {"actions": [{"type": "key", "id": "keyboard", "actions": [
+            {"type": "keyDown", "value": key}, {"type": "keyUp", "value": key}]}]})
+
     def shot(self, path):
         pathlib.Path(path).write_bytes(base64.b64decode(call("GET", self.p("/screenshot"))))
 

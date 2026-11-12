@@ -137,21 +137,23 @@ def main():
           }
           await sleep(2600);
           out.first = {...clicks};
+          out.focused = document.activeElement && document.activeElement.id;
           for (const id of ['fake', 'generic']) document.getElementById(id).hidden = true;
           kd('KeyK'); await sleep(200);                       // ad skipping OFF
-          document.getElementById('fake').hidden = false; for (const k in clicks) delete clicks[k];
+          document.getElementById('generic').hidden = false; for (const k in clicks) delete clicks[k];
           await sleep(1600); out.whileOff = {...clicks};
           kd('KeyK'); await sleep(2600);                      // ON again
           out.backOn = {...clicks};
           return out;
         """)
         f = r["first"]
-        check("YouTube-style skip button is clicked", f.get("fake", 0) >= 1, f)
+        check("YouTube-style skip button is NOT clicked (YouTube reports scripted clicks)", "fake" not in f, f)
+        check("...it gets keyboard focus instead, so the user can press Enter", r["focused"] == "fake", r["focused"])
         check("text-based 'Pular anúncio' is clicked", f.get("generic", 0) >= 1, f)
         check("'Skip to content' is never clicked", "nope" not in f, f)
         check("intro skipping is off by default", "intro" not in f, f)
-        check("skip shortcut turns clicking off", not r["whileOff"].get("fake"), r["whileOff"])
-        check("...and on again", r["backOn"].get("fake", 0) >= 1, r["backOn"])
+        check("skip shortcut turns clicking off", not r["whileOff"].get("generic"), r["whileOff"])
+        check("...and on again", r["backOn"].get("generic", 0) >= 1, r["backOn"])
 
         # ------------------------------------------------------------------ intro skip when enabled
         seed(ff, skip_intro=True)
@@ -168,58 +170,36 @@ def main():
         check("intro button is clicked when enabled", r.get("intro", 0) >= 1, r)
         check("...but not unrelated buttons", "nope" not in r, r)
 
-        # ------------------------------------------------------------------ a site that ignores scripted clicks
-        print("Content script: a site that ignores scripted clicks (like YouTube)")
-        keys = "['skipCount', 'skipFails']"
-        STATE = PRELUDE + """
+        # ------------------------------------------------------------------ YouTube: never click, never seek
+        # YouTube's player (base.js) treats a Skip click with isTrusted === false as an "abnormality" and
+        # reports it; seeking inside an ad is reported too. So on YouTube-like markup we must not send any
+        # scripted event: only put focus on the button, and let a REAL Enter key press skip the ad.
+        print("Content script: YouTube-style skip button (no scripted clicks, no seeking)")
+        YT = PRELUDE + """
           const v = document.getElementById('v');
           return {clicks: window.__clicks, events: window.__events,
                   adShowing: document.getElementById('player').classList.contains('ad-showing'),
-                  time: v.currentTime, duration: v.duration,
-                  content: (document.getElementById('content') || {}).currentTime};
+                  time: v.currentTime, focused: document.activeElement && document.activeElement.id};
         """
-
-        seed(ff, extra="adSkipFallback: false,")  # the fallback is on by default now: switch it off here
-        ff.go(f"{SITE}/fake-youtube.html?mode=strict")
-        time.sleep(1.5)
-        ff.run(PRELUDE + "await sleep(5500);")
-        r, s = ff.run(STATE), stored(ff, keys)
-        check("tries the click, then full pointer events", r["clicks"] >= 2 and any("pointerdown" in e for e in r["events"]), r)
-        check("a skip the site ignored is NOT counted", not s.get("skipCount"), s)
-        check("...it is reported as ignored instead", s.get("skipFails") == 1, s)
-
-        seed(ff, extra="adSkipFallback: true,")
-        ff.go(f"{SITE}/fake-youtube.html?mode=strict")
-        time.sleep(1.5)
-        ff.run(PRELUDE + "await sleep(6500);")
-        r, s = ff.run(STATE), stored(ff, keys)
-        check("fallback on: the skippable ad jumps to its end", not r["adShowing"] and r["time"] > r["duration"] - 1, r)
-        check("...and that skip is counted once", s.get("skipCount") == 1 and not s.get("skipFails"), s)
-
-        seed(ff)
-        ff.go(f"{SITE}/fake-youtube.html?mode=lenient")
-        time.sleep(1.5)
-        ff.run(PRELUDE + "await sleep(3000);")
-        r, s = ff.run(STATE), stored(ff, keys)
-        check("site that accepts the click: ad skipped and counted", not r["adShowing"] and s.get("skipCount") == 1 and not s.get("skipFails"), (r, s))
-
-        # a live stream must never be fast-forwarded, even with the fallback on
-        seed(ff, extra="adSkipFallback: true,")
-        ff.go(f"{SITE}/fake-youtube.html?mode=strict&live=1")
-        time.sleep(1.5)
-        ff.run(PRELUDE + "await sleep(5500);")
-        r, s = ff.run(STATE), stored(ff, keys)
-        check("live stream: the fallback never jumps to the end", r["time"] < 2, r)
-        check("...the ignored skip is reported instead", s.get("skipFails") == 1 and not s.get("skipCount"), s)
-
-        # YouTube may keep the live stream in a separate <video> next to the ad's: only the ad may be touched
-        seed(ff, extra="adSkipFallback: true,")
-        ff.go(f"{SITE}/fake-youtube.html?mode=strict&two=1")
-        time.sleep(1.5)
-        ff.run(PRELUDE + "await sleep(6500);")
-        r = ff.run(STATE)
-        check("two videos: the ad jumps to its end...", not r["adShowing"] and r["time"] > r["duration"] - 1, r)
-        check("...and the stream's own video is left alone", not r["content"], r)
+        for mode in ("strict", "lenient"):
+            seed(ff)
+            ff.go(f"{SITE}/fake-youtube.html?mode={mode}")
+            time.sleep(1.5)
+            ff.run(PRELUDE + "await sleep(4500);")
+            r, st = ff.run(YT), stored(ff, "['skipCount']")
+            ff.go(f"{SITE}/fake-youtube.html?mode={mode}")   # (reading storage navigated away: start again for the Enter test)
+            time.sleep(1.5)
+            ff.run(PRELUDE + "await sleep(3000);")
+            check(f"{mode}: no scripted click is ever sent", r["clicks"] == 0 and not r["events"], r)
+            check(f"{mode}: the ad video is never seeked", r["time"] < 1 and r["adShowing"], r)
+            check(f"{mode}: the Skip button gets keyboard focus", r["focused"] == "skip", r)
+            check(f"{mode}: nothing is counted as skipped", not st.get("skipCount"), st)
+            if mode == "strict":
+                ff.press("\ue007")  # a real Enter key press: a trusted event
+                time.sleep(0.8)
+                r2 = ff.run(YT)
+                check("the user's own Enter (a trusted event) skips the ad",
+                      r2["clicks"] == 1 and not r2["adShowing"] and not any(e.endswith("*") for e in r2["events"]), r2)
 
         # ------------------------------------------------------------------ lazy start
         print("Content script: stays idle until a video exists")
@@ -266,12 +246,6 @@ def main():
           out.unknownBoost = L.decide(NaN, true);
           out.edge30 = L.edge({length: 1, end: () => 30});
           out.edgeNone = [Number.isNaN(L.edge({length: 0})), Number.isNaN(L.edge(null))];
-          const v = (duration, paused = true) => ({duration, paused, ended: false});
-          const stream = v(7200, false), ad = v(30, false), idleAd = v(20, true);
-          out.pickShort = L.pickAd([stream, ad]) === ad;               // the long stream is never the ad
-          out.pickFinite = L.pickAd([v(Infinity, false), idleAd]) === idleAd;
-          out.pickNone = L.pickAd([stream]) === null;                  // only the stream: nothing to skip
-          out.pickPlaying = L.pickAd([idleAd, ad]) === ad;             // the playing one wins
           const S = VSS.seek;
           out.seekSum = S.accumulate(10, 10, 500);                     // quick presses add up: 20
           out.seekReset = S.accumulate(30, 10, 3500);                  // a pause of more than 3 s starts over: 10
@@ -287,8 +261,6 @@ def main():
         check("drifting far behind while catching up stops", r["drifted"] == "stop", r)
         check("unknown lag never starts and always stops", r["unknownIdle"] == "keep" and r["unknownBoost"] == "stop", r)
         check("live edge comes from the seekable ranges", r["edge30"] == 30 and r["edgeNone"] == [True, True], r)
-        check("ad video: never the long stream", r["pickShort"] and r["pickFinite"] and r["pickNone"], r)
-        check("ad video: the playing one is preferred", r["pickPlaying"], r)
         check("seek badge: quick presses add up (3 x 10 s = +30s)", r["seekSum"] == 20 and r["labels"][0] == "+30s", r)
         check("seek badge: a pause longer than 3 s starts over", r["seekReset"] == 10 and r["seekFirst"] == 10, r)
         check("seek badge: opposite direction nets out", r["seekNet"] == 0 and r["labels"][1:] == ["−20s", "0s", "+2.5s"], r)

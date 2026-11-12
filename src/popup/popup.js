@@ -75,18 +75,10 @@
     });
   }
 
-  // The site (YouTube) ignored some of our skip clicks: say so instead of pretending it worked.
-  function renderWarn() {
-    const show = cfg.skipFails > 0 && !cfg.adSkipFallback;
-    $("#warn").hidden = !show;
-    if (show) $("#warn").textContent = "⚠ " + t("skipWarn", { n: cfg.skipFails });
-  }
-
   function renderAll() {
     document.documentElement.lang = lang === "pt" ? "pt-BR" : lang;
     ui.translate(document, t);
     $("#pix").textContent = t("copyPix");
-    renderWarn();
     renderSite();
     renderChips();
     renderSpeed();
@@ -127,10 +119,6 @@
   /* ---- open the options page / dashboard ---- */
   const openOptions = () => { api.runtime.openOptionsPage(); window.close(); };
   $("#gear").onclick = openOptions;
-  $("#warn").onclick = () => {
-    api.tabs.create({ url: api.runtime.getURL("options/options.html#skip") });
-    window.close();
-  };
   $("#stats").onclick = openOptions;
   $("#stats").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openOptions(); } };
 
@@ -154,7 +142,6 @@
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     for (const [k, c] of Object.entries(changes)) if ("newValue" in c) cfg[k] = c.newValue;
-    renderWarn();
     renderSite();
     renderChips();
     renderSpeed();

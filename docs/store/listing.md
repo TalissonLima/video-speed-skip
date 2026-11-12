@@ -31,7 +31,7 @@ Watch videos at the speed you like, and skip the ads for you.
 
 **Skip ads**
 - Clicks "Skip Ad" the moment the button appears, on sites that accept it.
-- YouTube ignores clicks made by scripts, so there the button can't always be pressed for you. An optional, experimental setting jumps skippable ads to their end instead, and the extension tells you when a skip was ignored.
+- On YouTube, whose player rejects clicks made by scripts, the extension highlights the Skip button so you just press Enter.
 - Optional: plays ads at a speed you choose and returns to yours afterwards.
 - Optional: skips intros and recaps on streaming sites.
 
@@ -58,7 +58,7 @@ Assista aos vídeos na velocidade que você gosta, e deixe que a extensão pule 
 
 **Pular anúncios**
 - Clica em "Pular anúncio" assim que o botão aparece, nos sites que aceitam.
-- O YouTube ignora cliques feitos por scripts, então lá nem sempre dá para apertar o botão por você. Uma opção experimental leva os anúncios puláveis direto ao fim, e a extensão avisa quando um skip foi ignorado.
+- No YouTube, cujo player rejeita cliques feitos por scripts, a extensão destaca o botão Pular para você só apertar Enter.
 - Opcional: toca os anúncios em uma velocidade que você escolhe e volta à sua depois.
 - Opcional: pula abertura e recapitulação em sites de streaming.
 
@@ -85,7 +85,7 @@ Mira los vídeos a la velocidad que prefieras y deja que la extensión salte los
 
 **Saltar anuncios**
 - Pulsa "Saltar anuncio" en cuanto aparece el botón, en los sitios que lo aceptan.
-- YouTube ignora los clics hechos por scripts, así que allí no siempre se puede pulsar el botón por ti. Una opción experimental lleva los anuncios saltables directamente al final, y la extensión avisa cuando un salto fue ignorado.
+- En YouTube, cuyo reproductor rechaza los clics hechos por scripts, la extensión resalta el botón Saltar para que solo pulses Enter.
 - Opcional: reproduce los anuncios a una velocidad que eliges y vuelve a la tuya después.
 - Opcional: salta intros y resúmenes en sitios de streaming.
 
@@ -129,6 +129,13 @@ Suggested captions:
 3. **Shortcuts:** "Your keys, your speeds"
 4. **Speed:** "Each site remembers its speed"
 
+## What's new (0.6.0)
+
+- YouTube: the extension no longer clicks or seeks the ad. YouTube's player rejects and reports scripted clicks, so the
+  Skip button is highlighted instead (⏭ ⏎ badge) and your own Enter skips the ad.
+- Removed the experimental "jump to the end of the ad" option and the "skips ignored" warning.
+- Other sites still get a click, now verified before it is counted.
+
 ## What's new (0.5.1)
 
 - Quick rewind/forward presses add up on the badge (3 × 10 s shows +30s) and start over after 3 s without pressing.
@@ -139,12 +146,10 @@ Suggested captions:
 - Always-visible speed badge (with a shortcut) and adjustable opacity.
 - Optional ad speed (1.2× by default, off by default). Voices are always kept natural: the pitch option is gone.
 - Live streams: shortcut to jump to the live edge and optional automatic catch-up.
-- Fix: the jump-to-the-end-of-the-ad fallback no longer touches live streams.
 
 ## What's new (0.4.1)
 
 - Fix: ad skips are now verified. A skip the site ignored is no longer counted; the popup and options page say so.
-- Optional (experimental): if YouTube ignores the click, jump a skippable ad to its end.
 
 ## What's new (0.4.0)
 

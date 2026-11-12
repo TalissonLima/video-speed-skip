@@ -4,7 +4,7 @@ Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencie
 
 - **Speed control** — any video, 0.1× to 16×, on-video badge (corner, size, opacity, optionally always visible; quick rewind/forward presses add up: 3 × 10 s shows +30s)
 - **Per-site speed** — each website remembers its own speed (or switch to one global speed)
-- **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" the moment the button appears (see *Known limitations* for YouTube)
+- **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" on sites that allow it; on YouTube it highlights the button so you just press Enter (see *Known limitations*)
 - **Ad speed** (optional, off by default) — ads play at a speed you choose (1.2× by default) and yours returns afterwards (YouTube ads are detected)
 - **Live streams** — a shortcut jumps to the live edge; optionally it catches up to it automatically by playing slightly faster when you are a few seconds behind
 - **Skip intros & recaps** (optional) — "Skip Intro" / "Skip Recap" on streaming sites
@@ -26,15 +26,14 @@ an action and its value. Actions: slower, faster, set speed, **hold** (temporary
 
 ## Known limitations
 
-- **YouTube ignores clicks made by scripts.** Its Skip button only reacts to real user input (`event.isTrusted`), and
-  a browser extension can't fake that. The extension verifies every skip, only counts the ones that worked, and tells
-  you (popup + options) when the site ignored one. An experimental setting (*Skipping → If the click is ignored,
-  jump to the end of the ad*, currently **on by default while we test it**) jumps **skippable** ads to their end
-  instead; it never touches unskippable ads. The only way
-  to send a trusted click is Chrome's `debugger` permission, which we deliberately don't use.
-- **Live streams are never fast-forwarded.** The "jump to the end of the ad" fallback is skipped on live streams and only
-  touches a short, playing ad video. Live detection and the live-edge position come from the page's own video data and
-  YouTube's markup; they are tested with plain objects, not yet on a real YouTube live.
+- **YouTube can't be auto-clicked, and the extension doesn't try.** YouTube's player code rejects a Skip click whose
+  event is not trusted (`event.isTrusted === false`, which is every click made by a script): the ad is not skipped and the
+  attempt is reported as an "abnormality". Seeking inside an ad is reported too. So on YouTube the extension never clicks
+  and never seeks: it puts keyboard focus on the Skip button and shows a small `⏭ ⏎` badge, and your own Enter (a trusted
+  event) skips the ad. Other sites get a real click, verified before it is counted. (A trusted click would need Chrome's
+  `debugger` permission, which we deliberately don't use.)
+- **"Jump to live" and live catch-up** use the video's own live-edge data. Their decisions are tested with plain objects,
+  not yet on a real YouTube live.
 - Keyboard shortcuts don't work when the video is inside an iframe and the focus is on the outer page.
 
 ## Develop
