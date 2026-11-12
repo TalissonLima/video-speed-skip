@@ -1,19 +1,33 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>Store promo image</title>
-<!-- Used by tests/e2e/store_screenshots.py to draw the promo tiles (440x280 and 1400x560). Everything scales with the height. -->
+<!-- Used by tests/e2e/store_screenshots.py to draw the promo tiles. The #tile element has the exact pixel size
+     asked for in the query (?w=440&h=280) and everything inside scales with its height; the script photographs
+     that element, so the window size does not matter. -->
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; }
-  body { display: flex; align-items: center; justify-content: center; gap: 7vh; color: #fff; --u: 1vh;
-         background: linear-gradient(135deg, #4f46e5, #9333ea); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  svg { width: 34vh; height: 34vh; flex: none; filter: drop-shadow(0 2vh 4vh rgba(0,0,0,.3)); }
-  h1 { margin: 0 0 2vh; font-size: 11vh; line-height: 1.05; letter-spacing: -.03em; }
-  p { margin: 0; font-size: 6vh; line-height: 1.25; opacity: .92; }
-  .copy { max-width: 62vw; }
+  html, body { margin: 0; background: #1e1b4b; }
+  #tile { display: flex; align-items: center; justify-content: center; overflow: hidden; color: #fff; box-sizing: border-box;
+          background: linear-gradient(135deg, #4f46e5, #9333ea); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  svg { flex: none; filter: drop-shadow(0 calc(var(--h) * .02) calc(var(--h) * .04) rgba(0,0,0,.3)); }
+  h1 { margin: 0 0 calc(var(--h) * .02); line-height: 1.05; letter-spacing: -.03em; }
+  p { margin: 0; line-height: 1.25; opacity: .92; }
 </style>
-<svg viewBox="0 0 32 32" aria-hidden="true">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#e9d5ff"/></linearGradient></defs>
-  <rect width="32" height="32" rx="8" fill="url(#g)"/>
-  <path d="M7 9v14l8-7zM15 9v14l8-7z" fill="#6366f1"/><rect x="24" y="9" width="2" height="14" rx="1" fill="#6366f1"/>
-</svg>
-<div class="copy"><h1>Video Speed &amp; Skip</h1><p>Watch faster. Skip sooner.</p></div>
+<div id="tile">
+  <svg viewBox="0 0 32 32" aria-hidden="true">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#e9d5ff"/></linearGradient></defs>
+    <rect width="32" height="32" rx="8" fill="url(#g)"/>
+    <path d="M7 9v14l8-7zM15 9v14l8-7z" fill="#6366f1"/><rect x="24" y="9" width="2" height="14" rx="1" fill="#6366f1"/>
+  </svg>
+  <div id="copy"><h1>Video Speed &amp; Skip</h1><p>Watch faster. Skip sooner.</p></div>
+</div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const w = Number(q.get('w')) || 440, h = Number(q.get('h')) || 280;
+  const tile = document.getElementById('tile');
+  tile.style.cssText = `width:${w}px;height:${h}px;--h:${h}px;gap:${h * .07}px`;
+  const svg = tile.querySelector('svg');
+  svg.style.cssText = `width:${h * .34}px;height:${h * .34}px`;
+  tile.querySelector('h1').style.fontSize = h * .11 + 'px';
+  tile.querySelector('p').style.fontSize = h * .06 + 'px';
+  document.getElementById('copy').style.maxWidth = w * .62 + 'px';
+</script>

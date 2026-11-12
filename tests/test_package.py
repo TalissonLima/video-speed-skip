@@ -94,6 +94,19 @@ class Package(unittest.TestCase):
             self.assertIn(needed, names)
         self.assertFalse([n for n in names if n.startswith(("dist/", "docs/store/screenshots/", ".git/"))])
 
+    def test_store_images_have_the_exact_sizes(self):
+        import struct
+
+        def size(path):
+            return struct.unpack(">II", path.read_bytes()[16:24])
+
+        store = ROOT / "docs" / "store"
+        for shot in (store / "screenshots").rglob("*.png"):
+            self.assertEqual(size(shot), (1280, 800), shot.relative_to(store))
+        self.assertEqual(size(store / "promo" / "small-440x280.png"), (440, 280))
+        self.assertEqual(size(store / "promo" / "marquee-1400x560.png"), (1400, 560))
+        self.assertEqual(len(list((store / "screenshots").rglob("*.png"))), 12)
+
     def test_no_remote_code_or_network_in_the_package(self):
         for f in (DIST / "chrome").rglob("*.js"):
             code = f.read_text()

@@ -97,10 +97,10 @@ def main():
         promo = OUT.parent / "promo"
         promo.mkdir(parents=True, exist_ok=True)
         for name, (w, h) in {"small-440x280": (440, 280), "marquee-1400x560": (1400, 560)}.items():
-            ff.go(f"{SITE}/store-promo.html")
-            set_viewport(ff, w, h)
+            ff.size(1500, 800)  # bigger than the tile: only the element is photographed
+            ff.go(f"{SITE}/store-promo.html?w={w}&h={h}")
             time.sleep(0.8)
-            ff.shot(promo / f"{name}.png")
+            ff.shot_element("#tile", promo / f"{name}.png")
         print(f"promo tiles -> {promo.relative_to(ROOT)}")
     finally:
         ff.quit()

@@ -124,6 +124,11 @@ class Firefox:
     def shot(self, path):
         pathlib.Path(path).write_bytes(base64.b64decode(call("GET", self.p("/screenshot"))))
 
+    def shot_element(self, selector, path):
+        element = call("POST", self.p("/element"), {"using": "css selector", "value": selector})
+        element_id = next(iter(element.values()))
+        pathlib.Path(path).write_bytes(base64.b64decode(call("GET", self.p(f"/element/{element_id}/screenshot"))))
+
     # ---- convenience ----
     def open_ext(self, page, w=1100, h=800):
         """Open an extension page inside the frame-host page and switch into the frame."""
