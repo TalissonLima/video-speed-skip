@@ -16,29 +16,29 @@ Ready-to-paste text for the Chrome Web Store and Firefox Add-ons (AMO). Screensh
 - **PT:** Controle a velocidade dos vídeos com atalhos configuráveis. Pula anúncios onde é permitido e mostra o tempo que você economiza.
 - **ES:** Controla la velocidad de los vídeos con atajos personalizables. Salta anuncios donde se permite y muestra el tiempo que ahorras.
 
-## Full description
+## Full description (plain text: paste as is, the stores do not render formatting)
 
 ### English
 
 Watch videos at the speed you like, and skip ads with less effort.
 
-**Speed**
+SPEED
 - Any video, from 0.1× to 16×, with a small badge on the video (position, size, opacity, optionally always visible).
 - Each website remembers its own speed (or use one speed everywhere).
 - Fully configurable keyboard shortcuts: pick the key, the action and the value. Faster, slower, set a speed, hold a key for a temporary speed, toggle between two speeds, rewind, forward, pause the extension on a site.
 - Keeps voices natural at high speeds.
 - Live streams: jump to the live edge with a shortcut, or let the extension catch up to it automatically.
 
-**Skip ads**
+SKIP ADS
 - Clicks "Skip Ad" the moment the button appears, on sites that accept it.
 - On YouTube, whose player rejects clicks made by scripts, the extension highlights the Skip button so you just press Enter.
 - Optional: plays ads at a speed you choose and returns to yours afterwards.
 - Optional: skips intros and recaps on streaming sites.
 
-**Dashboard**
+DASHBOARD
 - See how much time you saved and how many ads were skipped, per day and per website.
 
-**Private and open source**
+PRIVATE AND OPEN SOURCE
 - No accounts, no tracking, no ads. Everything stays on your device (optional settings sync uses your browser's own sync).
 - English, Português and Español. Light and dark theme.
 - Free, MIT licensed: https://github.com/TalissonLima/video-speed-skip
@@ -49,23 +49,23 @@ If it saves you time, you can buy me a coffee: https://buymeacoffee.com/talisson
 
 Assista aos vídeos na velocidade que você gosta e pule anúncios com menos esforço.
 
-**Velocidade**
+VELOCIDADE
 - Qualquer vídeo, de 0,1× a 16×, com um indicador sobre o vídeo (posição, tamanho, opacidade, e opcionalmente sempre visível).
 - Cada site lembra a própria velocidade (ou use uma velocidade única em todo lugar).
 - Atalhos de teclado totalmente configuráveis: escolha a tecla, a ação e o valor. Mais rápido, mais lento, definir velocidade, segurar uma tecla para acelerar temporariamente, alternar entre duas velocidades, voltar, avançar e pausar a extensão em um site.
 - Mantém as vozes naturais em velocidades altas.
 - Transmissões ao vivo: vá para o ponto ao vivo com um atalho, ou deixe a extensão alcançá-lo automaticamente.
 
-**Pular anúncios**
+PULAR ANÚNCIOS
 - Clica em "Pular anúncio" assim que o botão aparece, nos sites que aceitam.
 - No YouTube, cujo player rejeita cliques feitos por scripts, a extensão destaca o botão Pular para você só apertar Enter.
 - Opcional: toca os anúncios em uma velocidade que você escolhe e volta à sua depois.
 - Opcional: pula abertura e recapitulação em sites de streaming.
 
-**Painel**
+PAINEL
 - Veja quanto tempo você economizou e quantos anúncios foram pulados, por dia e por site.
 
-**Privado e de código aberto**
+PRIVADO E DE CÓDIGO ABERTO
 - Sem conta, sem rastreamento, sem anúncios. Tudo fica no seu dispositivo (a sincronização opcional de configurações usa a do próprio navegador).
 - Português, English e Español. Tema claro e escuro.
 - Gratuito, licença MIT: https://github.com/TalissonLima/video-speed-skip
@@ -76,23 +76,23 @@ Se a extensão economiza seu tempo, você pode me pagar um café: https://buymea
 
 Mira los vídeos a la velocidad que prefieras y salta los anuncios con menos esfuerzo.
 
-**Velocidad**
+VELOCIDAD
 - Cualquier vídeo, de 0,1× a 16×, con un indicador sobre el vídeo (posición, tamaño, opacidad y, opcionalmente, siempre visible).
 - Cada sitio recuerda su propia velocidad (o usa una sola velocidad en todas partes).
 - Atajos de teclado totalmente configurables: elige la tecla, la acción y el valor. Más rápido, más lento, fijar velocidad, mantener una tecla para acelerar temporalmente, alternar entre dos velocidades, retroceder, avanzar y pausar la extensión en un sitio.
 - Mantiene las voces naturales a altas velocidades.
 - Directos: ve al punto en vivo con un atajo, o deja que la extensión lo alcance automáticamente.
 
-**Saltar anuncios**
+SALTAR ANUNCIOS
 - Pulsa "Saltar anuncio" en cuanto aparece el botón, en los sitios que lo aceptan.
 - En YouTube, cuyo reproductor rechaza los clics hechos por scripts, la extensión resalta el botón Saltar para que solo pulses Enter.
 - Opcional: reproduce los anuncios a una velocidad que eliges y vuelve a la tuya después.
 - Opcional: salta intros y resúmenes en sitios de streaming.
 
-**Panel**
+PANEL
 - Mira cuánto tiempo has ahorrado y cuántos anuncios se saltaron, por día y por sitio.
 
-**Privado y de código abierto**
+PRIVADO Y DE CÓDIGO ABIERTO
 - Sin cuenta, sin rastreo, sin anuncios. Todo se queda en tu dispositivo (la sincronización opcional de ajustes usa la del propio navegador).
 - Español, English y Português. Tema claro y oscuro.
 - Gratis, licencia MIT: https://github.com/TalissonLima/video-speed-skip
@@ -117,6 +117,34 @@ Si te ahorra tiempo, puedes invitarme a un café: https://buymeacoffee.com/talis
   (no minification, no bundling). When asked for source code, upload this repository (a `git archive` zip) and point to the
   build command above.
 - Reviewer note: no account is needed. To test, open any page with a `<video>` and press `D` (faster) / `S` (slower).
+
+## Microsoft Edge Add-ons
+
+- **Package:** the same `video-speed-skip-chrome-v<version>.zip` used for the Chrome Web Store.
+- **Listing (per language):** description (the store requires at least 250 characters; ours is longer), **logo 300x300**
+  (`docs/store/promo/logo-300x300.png`, required), screenshots 1280x800 (up to 6) from `docs/store/screenshots/<language>/`,
+  small tile `promo/small-440x280.png` and large tile `promo/marquee-1400x560.png` (both optional).
+- **Properties:** category (the one that fits best, e.g. Productivity), website `https://github.com/TalissonLima/video-speed-skip`,
+  support `https://github.com/TalissonLima/video-speed-skip/issues`.
+- **Privacy page:** the extension collects no personal data; policy URL
+  `https://github.com/TalissonLima/video-speed-skip/blob/main/PRIVACY.md`.
+- **Search terms** (up to 7, 30 characters each, not shown to users): `video speed controller`, `playback speed`,
+  `speed up video`, `skip ads`, `keyboard shortcuts`, `video player`, `time saved`.
+- **Notes for certification** (private, optional):
+  `No account is needed. Open any page with a <video> element and press D (faster) or A (slower); press H to hold 3x.
+  The options page (gear icon in the popup) holds the dashboard and the shortcuts. The extension only needs
+  "storage" and "activeTab" plus a content script on all sites to find <video> elements and Skip buttons; it sends nothing anywhere.
+  On sites whose player rejects scripted clicks the extension never clicks: it only focuses the Skip button.`
+
+## Opera Add-ons
+
+- **Package:** the Chrome zip; if the uploader rejects a zip, pack the same folder as a `.crx` in Opera (opera:extensions, Developer mode, Pack extension).
+- **Review:** manual and slower than the other stores (days to a few weeks); reviewers may want to read the source, so keep
+  `video-speed-skip-source-v<version>.zip` at hand. The code in the package is readable (only comments are removed, nothing is minified).
+- **Listing:** name `Video Speed & Skip` (it must not contain "Opera"), short description (plain text, 132 characters at most)
+  and the English long description above, icon `src/icons/icon-128.png`, category Productivity, license MIT.
+- **Screenshots:** at most **800x600** (preferred 612x408): use `docs/store/screenshots-opera/en/`, which are 800x500.
+- **Optional:** support page `https://github.com/TalissonLima/video-speed-skip/issues` and the privacy policy URL.
 
 ## Screenshots
 

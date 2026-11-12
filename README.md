@@ -1,6 +1,6 @@
 # Video Speed & Skip
 
-Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencies**).
+Extension for Chromium browsers (Chrome, Edge, Opera, Brave, Vivaldi) and Firefox (Manifest V3, **vanilla JS/CSS/HTML, zero dependencies**).
 
 - **Speed control** — any video, 0.1× to 16×, on-video badge (corner, size, opacity, optionally always visible; quick rewind/forward presses add up: 3 × 10 s shows +30s)
 - **Per-site speed** — each website remembers its own speed (or switch to one global speed)

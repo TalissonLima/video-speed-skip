@@ -52,11 +52,32 @@ return true;
 """
 
 
-def set_viewport(ff, w, h):
-    """Size the window so the *page* area is exactly w x h."""
-    ff.size(w, h)
-    iw, ih = ff.run("return [innerWidth, innerHeight];")
-    ff.size(w + (w - iw), h + (h - ih))
+def popup_scene(ff, lang, out, scale=1.0):
+    """The popup next to a headline (1280x800 * scale)."""
+    headline, sub = COPY[lang]
+    ff.size(1500, 900)  # bigger than the scene: only the element is photographed, so the window size never matters
+    ff.go(f"{SITE}/store-popup.html?" + urllib.parse.urlencode(
+        {"src": f"{EXT}/popup/popup.html", "h": headline, "p": sub, "s": scale}))
+    time.sleep(1.5)
+    ff.frame(0)
+    ff.run(POPUP_AS_ON_YOUTUBE.replace("__LANG__", lang))
+    ff.frame(None)
+    time.sleep(0.6)  # let the switch/chip transitions finish before the picture is taken
+    ff.shot_element("#box", out)
+
+
+def options_scenes(ff, folder, scale=1.0):
+    """Dashboard, shortcuts and speed pages of the options (1280x800 * scale)."""
+    ff.size(1500, 900)
+    ff.go(f"{SITE}/scaled-frame.html?" + urllib.parse.urlencode(
+        {"url": f"{EXT}/options/options.html", "w": 1280, "h": 800, "s": scale}))
+    time.sleep(1.5)
+    for number, section in ((2, "dashboard"), (3, "shortcuts"), (4, "speed")):
+        ff.frame(0)
+        ff.run(f"document.querySelector('[data-nav=\"{section}\"]').click(); await new Promise(r => setTimeout(r, 300)); return true;")
+        ff.frame(None)
+        time.sleep(0.2)
+        ff.shot_element("#box", folder / f"0{number}-{section}.png")
 
 
 def main():
@@ -65,43 +86,37 @@ def main():
     ff = Firefox()
     try:
         ff.install(ext)
+
+        # Chrome Web Store / Edge / Firefox: 1280x800, one folder per language
         for lang in ("en", "pt", "es"):
             folder = OUT / lang
             folder.mkdir(parents=True, exist_ok=True)
             ff.ext_run(SAMPLE.replace("__LANG__", lang))
-
-            # 1. popup next to a headline
-            headline, sub = COPY[lang]
-            src = f"{EXT}/popup/popup.html"
-            ff.go(f"{SITE}/store-popup.html?" + urllib.parse.urlencode({"src": src, "h": headline, "p": sub}))
-            set_viewport(ff, 1280, 800)
-            time.sleep(1.5)
-            ff.frame(0)
-            ff.run(POPUP_AS_ON_YOUTUBE.replace("__LANG__", lang))
-            ff.frame(None)
-            time.sleep(0.6)  # let the switch/chip transitions finish before the picture is taken
-            ff.shot(folder / "01-popup.png")
-
-            # 2-4. options page sections
-            ff.go(f"{SITE}/frame-host.html?{EXT}/options/options.html")
-            set_viewport(ff, 1280, 800)
-            time.sleep(1.5)
-            for number, section in ((2, "dashboard"), (3, "shortcuts"), (4, "speed")):
-                ff.frame(0)
-                ff.run(f"document.querySelector('[data-nav=\"{section}\"]').click(); await new Promise(r => setTimeout(r, 300)); return true;")
-                ff.frame(None)
-                ff.shot(folder / f"0{number}-{section}.png")
+            popup_scene(ff, lang, folder / "01-popup.png")
+            options_scenes(ff, folder)
             print(f"{lang}: 4 screenshots -> {folder.relative_to(ROOT)}")
 
-        # promo tiles (Chrome Web Store: the small one is recommended, the marquee optional; neither can be localized)
+        # promo tiles (Chrome Web Store and Edge: the small one is recommended, the marquee optional; not localizable in Chrome)
         promo = OUT.parent / "promo"
         promo.mkdir(parents=True, exist_ok=True)
+        ff.size(1500, 900)
         for name, (w, h) in {"small-440x280": (440, 280), "marquee-1400x560": (1400, 560)}.items():
-            ff.size(1500, 800)  # bigger than the tile: only the element is photographed
             ff.go(f"{SITE}/store-promo.html?w={w}&h={h}")
             time.sleep(0.8)
             ff.shot_element("#tile", promo / f"{name}.png")
-        print(f"promo tiles -> {promo.relative_to(ROOT)}")
+        # Edge Add-ons asks for a 300x300 logo
+        ff.go(f"{SITE}/store-logo.html")
+        time.sleep(0.5)
+        ff.shot_element("#logo", promo / "logo-300x300.png")
+        print(f"promo tiles and logo -> {promo.relative_to(ROOT)}")
+
+        # Opera Add-ons: screenshots may be at most 800x600 (preferred 612x408), English listing
+        opera = OUT.parent / "screenshots-opera" / "en"
+        opera.mkdir(parents=True, exist_ok=True)
+        ff.ext_run(SAMPLE.replace("__LANG__", "en"))
+        popup_scene(ff, "en", opera / "01-popup.png", scale=0.625)
+        options_scenes(ff, opera, scale=0.625)
+        print(f"opera: 4 screenshots (800x500) -> {opera.relative_to(ROOT)}")
     finally:
         ff.quit()
         server.shutdown()

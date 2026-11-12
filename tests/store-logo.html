@@ -1,0 +1,16 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Store logo</title>
+<!-- Used by tests/e2e/store_screenshots.py: the 300x300 logo the Edge Add-ons store asks for (full-bleed square, no transparent corners). -->
+<style>
+  html, body { margin: 0; background: #1e1b4b; }
+  #logo { width: 300px; height: 300px; }
+  svg { display: block; width: 300px; height: 300px; }
+</style>
+<div id="logo">
+  <svg viewBox="0 0 32 32" aria-hidden="true">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs>
+    <rect width="32" height="32" fill="url(#g)"/>
+    <path d="M7 9v14l8-7zM15 9v14l8-7z" fill="#fff"/><rect x="24" y="9" width="2" height="14" rx="1" fill="#fff"/>
+  </svg>
+</div>
