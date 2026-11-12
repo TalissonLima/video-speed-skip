@@ -1,6 +1,5 @@
 .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
 
-/* sidebar */
 .side { position: sticky; top: 0; align-self: start; height: 100vh; padding: 20px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); background: var(--card); }
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 18px; font-size: 14px; }
 .logo { width: 30px; height: 30px; flex: none; }
@@ -10,7 +9,6 @@
 .ni { width: 20px; display: inline-flex; justify-content: center; }
 .ni svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* content */
 main { padding: 32px 36px 80px; max-width: 880px; width: 100%; }
 h2 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
 h3 { margin: 0 0 8px; font-size: 14px; }
@@ -26,7 +24,6 @@ section[data-section] { scroll-margin-top: 32px; }
 .controls { display: flex; gap: 8px; flex-wrap: wrap; }
 .wrap { flex-wrap: wrap; }
 
-/* dashboard */
 .kpis { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
 .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
 .kpi small { display: block; color: var(--muted); font-size: 11.5px; margin-bottom: 6px; }
@@ -53,7 +50,6 @@ section[data-section] { scroll-margin-top: 32px; }
 .top-row .fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
 .top-row .val { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; min-width: 52px; text-align: right; }
 
-/* form rows */
 .field { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 0; cursor: default; }
 .field + .field, h3 + .field { border-top: 0; }
 .panel > .field:not(:first-child) { border-top: 1px solid var(--line); }
@@ -69,7 +65,6 @@ label.field { cursor: pointer; }
 .choice small { color: var(--muted); font-size: 12px; }
 .choice.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
 
-/* lists (saved / paused sites) */
 .list { display: grid; margin-top: 6px; }
 .list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
 .list-row:first-child { border-top: 0; }
@@ -83,7 +78,6 @@ label.field { cursor: pointer; }
 .x svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .x:hover { color: var(--danger); background: var(--chip); }
 
-/* shortcut editor */
 .scs { display: grid; gap: 2px; padding: 8px 16px; }
 .sc-row { padding: 10px 0; border-top: 1px solid var(--line); }
 .sc-row:first-child { border-top: 0; }
@@ -97,7 +91,6 @@ input:disabled { opacity: .5; }
 .keybtn.rec { border-color: var(--accent); color: var(--accent); font-family: system-ui, sans-serif; font-size: 12px; }
 .keybtn.dup { border-color: var(--danger); }
 
-/* overlay position picker */
 .screen { position: relative; width: 240px; aspect-ratio: 16 / 9; border-radius: 10px; background: linear-gradient(135deg, #2b2e3b, #14151c); border: 1px solid var(--line); flex: none; }
 .screen button { position: absolute; width: 34px; height: 24px; border-radius: 6px; border: 1.5px dashed rgba(255,255,255,.35); background: transparent; cursor: pointer; }
 .screen button:hover { border-color: #fff; }
@@ -121,7 +114,6 @@ textarea { width: 100%; height: auto; padding: 8px; font: 12px/1.4 ui-monospace,
 .toast[data-kind=error] .toast-ico { background: #ef4444; }
 .toast[data-kind=error] .toast-ico::before { content: "!"; }
 
-/* narrow screens: sidebar becomes a top bar */
 @media (max-width: 800px) {
   .shell { grid-template-columns: minmax(0, 1fr); }
   .side { position: static; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; border-right: 0; border-bottom: 1px solid var(--line); }
@@ -137,7 +129,6 @@ textarea { width: 100%; height: auto; padding: 8px; font: 12px/1.4 ui-monospace,
   #presets { width: 150px; }
 }
 
-/* reordering */
 .grip { width: 22px; height: 30px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: grab; }
 .grip:hover { background: var(--chip); color: var(--text); }
 .grip svg { width: 12px; height: 16px; fill: currentColor; }
@@ -145,7 +136,6 @@ textarea { width: 100%; height: auto; padding: 8px; font: 12px/1.4 ui-monospace,
 .sc-row.drop-before { box-shadow: 0 -2px 0 0 var(--accent); }
 .sc-row.drop-after { box-shadow: 0 2px 0 0 var(--accent); }
 
-/* confirmation dialog */
 dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); padding: 20px; width: min(420px, calc(100vw - 32px)); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 dialog::backdrop { background: rgba(10, 10, 20, .5); }
 dialog p { margin: 0 0 18px; font-size: 14px; line-height: 1.5; }

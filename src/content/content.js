@@ -1,11 +1,3 @@
-// Video Speed & Skip — content script (runs in every frame).
-// Features: per-site playback speed, shortcuts (incl. hold / toggle / pause site),
-// automatic "Skip Ad" and optional "Skip Intro" clicking, normal speed during ads,
-// time-saved stats.
-//
-// Performance: on a page without a <video> this script only keeps one cheap, throttled
-// observer. The heavy work (timers, attribute observer, scanning) starts the moment a
-// video shows up (see activate()).
 (() => {
   if (!globalThis.VSS || window.__vssLoaded) return;
   window.__vssLoaded = true;
@@ -13,23 +5,19 @@
   const { api, DEFAULTS, MIN, MAX } = VSS;
   let cfg = { ...DEFAULTS };
   let activeVideo = null;
-  let tempSpeed = null;    // speed while a "hold" key is down (never saved)
-  let held = null;         // { code } of the held key
-  let beforeToggle = null; // speed to return to when a "toggle" shortcut is pressed again
-  let active = false;      // false until the page actually has a video
-  let lastAd = false;      // was an ad playing at the last scan?
-  let adChangedAt = 0;     // when an ad started/ended (to ignore the site's own rate resets)
-  let liveBoost = null;    // catch-up speed while we close the gap to a live stream
+  let tempSpeed = null;
+  let held = null;
+  let beforeToggle = null;
+  let active = false;
+  let lastAd = false;
+  let adChangedAt = 0;
+  let liveBoost = null;
 
-  /* ------------------------------------------------------------------ *
-   * Helpers
-   * ------------------------------------------------------------------ */
-  // The hostname of the tab (not of the iframe) is the key for per-site settings.
   let cachedHost;
   const hostname = () => (cachedHost ??= (() => {
-    try { return top.location.hostname; } catch { /* cross-origin frame */ }
-    const o = location.ancestorOrigins; // Chrome only
-    if (o?.length) { try { return new URL(o[o.length - 1]).hostname; } catch { /* ignore */ } }
+    try { return top.location.hostname; } catch {  }
+    const o = location.ancestorOrigins;
+    if (o?.length) { try { return new URL(o[o.length - 1]).hostname; } catch {  } }
     return location.hostname;
   })());
 
@@ -43,13 +31,9 @@
     return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
   };
 
-  // YouTube marks its player while an ad is playing.
   const AD_PLAYING = ".html5-video-player.ad-showing, .html5-video-player.ad-interrupting";
   const adPlaying = () => !!document.querySelector(AD_PLAYING);
 
-  // Call whenever the page may have switched between content and ad. Moves the videos to the right
-  // speed at once (back to the user's own speed when the ad ends) and opens the short window in which
-  // the site's own rate resets are ignored instead of being learned as the user's choice.
   function syncAd() {
     const ad = adPlaying();
     if (ad === lastAd) return;
@@ -58,15 +42,13 @@
     applyAll();
   }
 
-  // A live stream: infinite duration, or YouTube's live markers. Never fast-forward those.
   function isLive(v) {
-    if (v && v.duration === Infinity) return true; // (NaN just means the metadata isn't loaded yet)
+    if (v && v.duration === Infinity) return true;
     if (document.querySelector(".html5-video-player.ytp-live")) return true;
     const badge = document.querySelector(".ytp-live-badge");
     return !!(badge && visible(badge));
   }
 
-  // Speed we want right now: held key > ad speed (opt-in) > live catch-up > saved speed.
   const speedNow = () => {
     if (tempSpeed !== null) return tempSpeed;
     if (cfg.adNormalSpeed && adPlaying()) return clamp(Number(cfg.adSpeed) || 1.2);
@@ -74,10 +56,7 @@
     return liveBoost ? Math.max(base, liveBoost) : base;
   };
 
-  /* ------------------------------------------------------------------ *
-   * Finding videos (also inside open shadow roots, e.g. web-component players)
-   * ------------------------------------------------------------------ */
-  const roots = [];            // open shadow roots we listen on
+  const roots = [];
   const seenRoots = new WeakSet();
   let lastShadowScan = 0;
 
@@ -99,7 +78,7 @@
       }
     };
     visit(document);
-    for (let i = 0; i < roots.length; i++) visit(roots[i]); // roots grows while we iterate: nested shadows
+    for (let i = 0; i < roots.length; i++) visit(roots[i]);
   }
 
   function allVideos() {
@@ -115,16 +94,13 @@
     return vids[0] ?? null;
   }
 
-  /* ------------------------------------------------------------------ *
-   * Overlay (shadow DOM so site CSS can't touch it)
-   * ------------------------------------------------------------------ */
   const SIZES = { s: 12, m: 14, l: 18 };
   let overlayHost, badge, hideTimer;
 
   function buildOverlay() {
     overlayHost = document.createElement("div");
     overlayHost.style.cssText = "all:initial;position:fixed;z-index:2147483647;pointer-events:none;";
-    const root = overlayHost.attachShadow({ mode: "open" }); // open: it only shows the speed, and tests can read it
+    const root = overlayHost.attachShadow({ mode: "open" });
     root.innerHTML = `
       <style>
         .b{font:600 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;
@@ -136,10 +112,9 @@
     badge = root.querySelector(".b");
   }
 
-  let alwaysShown = false; // is the badge currently pinned by "always visible"?
+  let alwaysShown = false;
   let flashUntil = 0;
 
-  // Puts the badge on the video. `force` shows it even on a paused site (the pause shortcut itself).
   function placeBadge(text, force = false) {
     if (!cfg.overlay || (!force && !enabled())) return false;
     const v = pickVideo();
@@ -150,8 +125,6 @@
     if (parent instanceof HTMLVideoElement) parent = parent.parentElement || document.documentElement;
     if (overlayHost.parentNode !== parent) parent.appendChild(overlayHost);
 
-    // 3x3 grid relative to the video: row t/m/b, column l/c/r. The middle row/column are handy for
-    // vertical videos (Shorts, Reels) where the corners are covered by the site's own buttons.
     const r = v.getBoundingClientRect();
     const [row, col] = (cfg.overlayPos || "tl").split("");
     const m = 12, s = overlayHost.style;
@@ -172,7 +145,6 @@
     return true;
   }
 
-  // Shows a message briefly (or lets the always-visible badge pick the speed up again right after).
   function flash(text, force = false) {
     if (!placeBadge(text, force)) return;
     flashUntil = Date.now() + 1200;
@@ -180,7 +152,6 @@
     if (!cfg.overlayAlways) hideTimer = setTimeout(() => badge.classList.remove("on"), 1200);
   }
 
-  // "Always visible" mode: keep the current speed on the video, following it around.
   function refreshBadge() {
     if (!cfg.overlayAlways) {
       if (alwaysShown && Date.now() >= flashUntil) { alwaysShown = false; badge?.classList.remove("on"); }
@@ -188,17 +159,13 @@
     }
     alwaysShown = true;
     const v = pickVideo();
-    // a message (e.g. "+30s" from the seek keys) stays for its time; only then the speed comes back
     const text = Date.now() < flashUntil ? badge.textContent : fmt(speedNow());
     if (!(v && onScreen(v) && placeBadge(text))) badge?.classList.remove("on");
   }
 
-  /* ------------------------------------------------------------------ *
-   * Speed control
-   * ------------------------------------------------------------------ */
   function applySpeed(v) {
     if (!enabled()) return;
-    if ("preservesPitch" in v) v.preservesPitch = true; // always keep voices natural
+    if ("preservesPitch" in v) v.preservesPitch = true;
     else if ("mozPreservesPitch" in v) v.mozPreservesPitch = true;
     const want = speedNow();
     if (near(v.playbackRate, want)) return;
@@ -207,7 +174,6 @@
   }
   const applyAll = () => allVideos().forEach(applySpeed);
 
-  // Save a speed for this site (or globally, depending on the scope setting).
   function persist(n) {
     const patch = VSS.speedPatch(cfg, hostname(), n);
     Object.assign(cfg, patch);
@@ -223,7 +189,6 @@
     flash(fmt(n));
   }
 
-  // Media events don't bubble, but they can be captured on the document / a shadow root.
   const isVideo = (e) => e.target instanceof HTMLVideoElement;
 
   function onLoad(e) {
@@ -245,12 +210,9 @@
   function onRate(e) {
     const v = e.target;
     if (!(v instanceof HTMLVideoElement)) return;
-    syncAd(); // the site may reset the rate in the same breath as the ad ending: notice that first
+    syncAd();
     if (v.__vssSetting) { v.__vssSetting = false; return; }
     if (!enabled() || tempSpeed !== null || near(v.playbackRate, speedNow())) return;
-    // Never learn a speed from the ad player or right after an ad starts/ends, and undo
-    // the resets sites do right after loading a new video. Anything else is the user's
-    // own choice (e.g. the site's speed menu), so remember it.
     if (adPlaying() || Date.now() - adChangedAt < 1500 || Date.now() - (v.__vssLoadedAt ?? 0) < 1500) applySpeed(v);
     else persist(clamp(v.playbackRate));
   }
@@ -261,9 +223,6 @@
     target.addEventListener("ratechange", onRate, true);
   }
 
-  /* ------------------------------------------------------------------ *
-   * Keyboard shortcuts
-   * ------------------------------------------------------------------ */
   const typing = (t) => t?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t?.tagName ?? "");
 
   function releaseHold() {
@@ -276,8 +235,6 @@
   document.addEventListener("keyup", (e) => { if (held && e.code === held.code) releaseHold(); }, true);
   addEventListener("blur", releaseHold);
 
-  // Seeks made in quick succession add up on the badge: 3 x "forward 10 s" shows "+30s".
-  // After 3 s without pressing, the total starts over (see shared/seek.js).
   let seekTotal = 0, seekAt = 0;
   function seekBy(v, delta) {
     const now = Date.now();
@@ -305,7 +262,7 @@
       !!s.ctrl === e.ctrlKey && !!s.alt === e.altKey && !!s.shift === e.shiftKey);
     if (!sc) return;
 
-    if (sc.action === "toggleSite") { // works even while the site is paused
+    if (sc.action === "toggleSite") {
       toggleSite();
       e.preventDefault();
       e.stopPropagation();
@@ -313,7 +270,7 @@
     }
     if (!enabled()) return;
     const v = pickVideo();
-    if (!v || (v.paused && !onScreen(v))) return; // not ours to control: leave the page's own keys alone
+    if (!v || (v.paused && !onScreen(v))) return;
     const n = Number(sc.value);
     switch (sc.action) {
       case "slower": setSpeed(speedNow() - (n || 0.1)); break;
@@ -326,7 +283,7 @@
         break;
       }
       case "hold":
-        if (!held) { // ignore key auto-repeat
+        if (!held) {
           held = { code: e.code };
           tempSpeed = clamp(n || 2);
           applyAll();
@@ -349,13 +306,9 @@
       default: return;
     }
     e.preventDefault();
-    e.stopPropagation(); // keep the site's own handler for this key from also firing
+    e.stopPropagation();
   }, true);
 
-  /* ------------------------------------------------------------------ *
-   * Skip buttons
-   * ------------------------------------------------------------------ */
-  // Known player buttons (YouTube and friends). These are only highlighted, never clicked (see assistSkip).
   const AD_SELECTORS = [
     ".ytp-skip-ad-button",
     ".ytp-ad-skip-button",
@@ -365,8 +318,6 @@
     ".videoAdUiSkipButton"
   ].join(",");
 
-  // Generic fallback: the button's whole label must look like "Skip Ad".
-  // Deliberately strict so "Skip intro" or "Skip to content" are never clicked as ads.
   const AD_TEXT = new RegExp(
     "^(" + [
       "skip (the )?ads?", "skip advertisements?",
@@ -376,7 +327,6 @@
       "salta (la )?pubblicit[aà]"
     ].join("|") + ")$", "i");
 
-  // Optional: intros / recaps on streaming sites.
   const INTRO_SELECTORS = [
     '[data-uia="player-skip-intro"]',
     '[data-uia="player-skip-recap"]',
@@ -404,7 +354,6 @@
     return r.width > 0 && r.height > 0;
   };
 
-  // Ignore buttons we clicked in the last 2s (they may linger while the player closes them).
   const fresh = (el) => Date.now() - (el.__vssClickedAt ?? 0) >= 2000;
 
   const findBySelector = (selectors) => {
@@ -412,8 +361,6 @@
     return null;
   };
 
-  // Buttons recognised by their label. Anything inside a YouTube player is left to the known-selector
-  // path (and never clicked, see assistSkip below).
   const findByText = (text) => {
     for (const el of document.querySelectorAll('button,[role="button"]')) {
       if (fresh(el) && !el.matches(AD_SELECTORS) && !el.closest(".html5-video-player") &&
@@ -429,35 +376,27 @@
     el.click();
   }
 
-  // Why we do NOT click on YouTube. Its player code (base.js) rejects a Skip click whose event is not
-  // trusted: the button's onClick calls a check that treats `event.isTrusted === false` (every click made
-  // by a script) as an "abnormality", does not skip the ad and reports the attempt. Seeking inside an ad
-  // is reported too, so jumping to the end of an ad is out as well.
-  // What a script can honestly do: put keyboard focus on the Skip button, so the user's own Enter or
-  // Space (a trusted event) skips the ad.
   let hintedBtn = null;
   function assistSkip(btn) {
-    if (hintedBtn === btn) return; // once per appearance of the button
+    if (hintedBtn === btn) return;
     hintedBtn = btn;
-    if (!typing(document.activeElement)) { // (never steal the focus from someone typing)
-      try { btn.focus({ preventScroll: true }); } catch { /* ignore */ }
+    if (!typing(document.activeElement)) {
+      try { btn.focus({ preventScroll: true }); } catch {  }
     }
     flash("⏭ ⏎");
   }
 
-  // Other sites (no such check): click, then make sure the button went away before counting a skip.
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const gone = (btn) => !btn.isConnected || !visible(btn);
 
   async function skipAd(btn) {
-    btn.__vssClickedAt = Date.now() + 3000; // keep other scans away while we verify
+    btn.__vssClickedAt = Date.now() + 3000;
     btn.click();
     await wait(900);
     btn.__vssClickedAt = Date.now();
     if (gone(btn)) recordStats({ ads: 1 });
   }
 
-  // Runs on DOM changes and once a second while the page has a video.
   function scan() {
     if (!active) return;
     scanShadows();
@@ -467,10 +406,10 @@
     if (!enabled()) return;
     if (hintedBtn && (!hintedBtn.isConnected || !visible(hintedBtn))) hintedBtn = null;
     if (cfg.autoSkip) {
-      const known = findBySelector(AD_SELECTORS); // YouTube & co: never clicked, only highlighted
+      const known = findBySelector(AD_SELECTORS);
       if (known) assistSkip(known);
-      if (!document.querySelector(".html5-video-player")) { // (no need to walk every button on a YouTube page)
-        const generic = findByText(AD_TEXT);               // other sites: a verified click
+      if (!document.querySelector(".html5-video-player")) {
+        const generic = findByText(AD_TEXT);
         if (generic) skipAd(generic);
       }
     }
@@ -487,15 +426,11 @@
     setTimeout(() => { scanQueued = false; scan(); }, 250);
   };
 
-  /* ------------------------------------------------------------------ *
-   * Stats: time saved while the main video plays faster than 1x
-   * (every second of real time saves (rate - 1) seconds), flushed in batches.
-   * ------------------------------------------------------------------ */
   let pendingSaved = 0;
   let lastTick = performance.now();
 
   function mainPlaying() {
-    let best = null, bestArea = 200 * 100; // ignore tiny previews
+    let best = null, bestArea = 200 * 100;
     for (const v of allVideos()) {
       if (v.paused || v.ended || v.readyState < 3) continue;
       const a = area(v);
@@ -510,8 +445,6 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
-  // Lifetime totals + per-day and per-site breakdown for the dashboard. Always
-  // reads fresh values so several frames/tabs don't overwrite each other.
   async function recordStats({ saved = 0, ads = 0 }) {
     try {
       const cur = await api.storage.local.get(["stats", "savedSeconds", "skipCount"]);
@@ -524,9 +457,9 @@
       day.s = r1(day.s + saved); day.a += ads;
       site.s = r1(site.s + saved); site.a += ads;
 
-      const days = Object.keys(st.daily).sort(); // keep the last 90 days
+      const days = Object.keys(st.daily).sort();
       while (days.length > 90) delete st.daily[days.shift()];
-      const hosts = Object.keys(st.sites);      // keep the 100 most relevant sites
+      const hosts = Object.keys(st.sites);
       if (hosts.length > 100) {
         const score = (h) => st.sites[h].s + st.sites[h].a * 30;
         hosts.sort((x, y) => score(x) - score(y)).slice(0, hosts.length - 100).forEach((h) => delete st.sites[h]);
@@ -536,7 +469,7 @@
         savedSeconds: r1((cur.savedSeconds ?? 0) + saved),
         skipCount: (cur.skipCount ?? 0) + ads
       });
-    } catch { /* extension was reloaded while this page was open */ }
+    } catch {  }
   }
 
   function flushSaved() {
@@ -552,28 +485,22 @@
     lastTick = now;
     if (enabled()) {
       const v = mainPlaying();
-      if (v && v.playbackRate > 1 && !liveBoost) pendingSaved += (v.playbackRate - 1) * dt; // catching up isn't "saved"
+      if (v && v.playbackRate > 1 && !liveBoost) pendingSaved += (v.playbackRate - 1) * dt;
     }
     if (pendingSaved >= 5) flushSaved();
   }
-  /* ------------------------------------------------------------------ *
-   * Live streams: jump to the live edge, or (opt-in) catch up to it by playing a bit faster
-   * ------------------------------------------------------------------ */
   const liveEdge = (v) => VSS.live.edge(v.seekable);
 
   function goLive(v) {
     const edge = liveEdge(v);
     if (!isLive(v) || !Number.isFinite(edge)) return;
     v.currentTime = Math.max(0, edge - 0.5);
-    // At the live edge there is nothing ahead to speed through: back to 1x (this also ends a catch-up).
     tempSpeed = null; held = null; liveBoost = null;
     persist(1);
     applyAll();
     flash("● LIVE · 1×");
   }
 
-  // The thresholds live in shared/live.js. A stream watched far behind on purpose is left alone, and
-  // nothing happens while the video is paused (mainPlaying() is null then).
   function liveTick() {
     const v = cfg.liveCatchUp && enabled() ? mainPlaying() : null;
     const lag = v && isLive(v) ? liveEdge(v) - v.currentTime : NaN;
@@ -585,16 +512,12 @@
   addEventListener("pagehide", flushSaved);
   document.addEventListener("visibilitychange", () => { if (document.hidden) flushSaved(); });
 
-  /* ------------------------------------------------------------------ *
-   * Lazy start: do nothing heavy until the page has a video
-   * ------------------------------------------------------------------ */
   function hasVideo(force = false) {
     if (document.querySelector("video")) return true;
     scanShadows(force);
     return roots.some((r) => r.host.isConnected && r.querySelector("video"));
   }
 
-  // Cheap watcher used only while there is no video yet (child additions, throttled).
   let armTimer = null;
   const armObserver = new MutationObserver(() => {
     if (armTimer) return;
@@ -604,7 +527,6 @@
     }, 500);
   });
 
-  // setInterval that stops by itself once the extension was updated/reloaded (api.runtime.id disappears)
   function every(fn, ms) {
     const id = setInterval(() => { if (!api.runtime?.id) clearInterval(id); else fn(); }, ms);
   }
@@ -616,17 +538,14 @@
     new MutationObserver(scheduleScan).observe(document.documentElement, {
       subtree: true, childList: true, attributes: true, attributeFilter: ["class", "style", "hidden"]
     });
-    every(scan, 1000);       // safety net for changes the observer can't see
+    every(scan, 1000);
     every(tickStats, 1000);
     every(liveTick, 1000);
-    every(refreshBadge, 400); // only does work while "always visible" is on
+    every(refreshBadge, 400);
     applyAll();
     scan();
   }
 
-  /* ------------------------------------------------------------------ *
-   * Boot + live settings sync (popup / options page / other tabs)
-   * ------------------------------------------------------------------ */
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     for (const [k, c] of Object.entries(changes)) if ("newValue" in c) cfg[k] = c.newValue;
@@ -636,7 +555,7 @@
   listen(document);
   VSS.load().then((loaded) => {
     cfg = loaded;
-    if (active) applyAll();           // a video fired events before the settings were loaded
+    if (active) applyAll();
     else if (hasVideo(true)) activate();
     else armObserver.observe(document.documentElement, { subtree: true, childList: true });
   });

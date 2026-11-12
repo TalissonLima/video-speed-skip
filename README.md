@@ -64,8 +64,8 @@ python3 scripts/build.py --keep-comments  # same, but keeping comments (handy fo
 Before publishing, edit `src/shared/config.js` (Buy Me a Coffee, PIX key, repo URL)
 and the Firefox add-on id in `scripts/build.py` if you fork it.
 
-`src/` is the commented source of truth; only the packaged copies in `dist/` are stripped.
-For Firefox Add-ons review, submit this repository as the source code.
+`src/` has no comments, on purpose. The build still strips any that sneak in, and a test fails if `src/` contains one.
+The package is `src/` plus the per-browser manifest keys: no minification, no bundling, nothing else.
 
 ## Tests
 

@@ -7,20 +7,18 @@
   const lang = ui.resolveLang(cfg.lang);
   const t = ui.makeT(() => lang);
 
-  /* ---- current site ---- */
   let host = "";
   try {
     const [tab] = await api.tabs.query({ active: true, currentWindow: true });
     const u = new URL(tab.url);
     if (/^https?:$/.test(u.protocol)) host = u.hostname;
-  } catch { /* page not accessible (browser pages, new tab, ...) */ }
+  } catch {  }
 
   const paused = () => !!host && cfg.disabledSites.includes(host);
   const siteMode = () => cfg.speedScope === "site";
   const controlsOff = () => paused() || (siteMode() && !host);
   const currentSpeed = () => VSS.speedFor(cfg, host);
 
-  /* ---- rendering ---- */
   function renderSite() {
     $("#siteHost").textContent = host || "—";
     $("#siteState").textContent = !host ? t("siteNone") : paused() ? t("sitePaused") : t("siteActive");
@@ -44,7 +42,6 @@
     $("#skipped").textContent = cfg.skipCount.toLocaleString(ui.LOCALES[lang]);
   }
 
-  // A one-line reminder of the keys the user has configured.
   function renderTip() {
     const tip = $("#tip");
     tip.textContent = "";
@@ -86,7 +83,6 @@
     renderTip();
   }
 
-  /* ---- speed controls ---- */
   function setSpeed(n) {
     if (controlsOff()) return;
     n = Math.min(MAX, Math.max(MIN, Math.round(n * 100) / 100));
@@ -100,7 +96,6 @@
   $("#plus").onclick = () => setSpeed(currentSpeed() + 0.1);
   $("#reset").onclick = () => setSpeed(1);
 
-  /* ---- toggles ---- */
   for (const key of ["autoSkip", "skipIntro"]) {
     const box = $("#" + key);
     box.checked = cfg[key];
@@ -116,13 +111,11 @@
     renderSpeed();
   };
 
-  /* ---- open the options page / dashboard ---- */
   const openOptions = () => { api.runtime.openOptionsPage(); window.close(); };
   $("#gear").onclick = openOptions;
   $("#stats").onclick = openOptions;
   $("#stats").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openOptions(); } };
 
-  /* ---- support ---- */
   const { buyMeACoffee, pixKey } = VSS_CONFIG;
   if (buyMeACoffee) $("#bmc").href = buyMeACoffee; else $("#bmc").hidden = true;
   if (pixKey && ui.inBrazil()) {
@@ -133,12 +126,11 @@
         await navigator.clipboard.writeText(pixKey);
         pix.textContent = "✓ " + t("pixCopied");
         setTimeout(() => (pix.textContent = t("copyPix")), 1800);
-      } catch { /* clipboard blocked */ }
+      } catch {  }
     };
   }
   if (!buyMeACoffee && !(pixKey && ui.inBrazil())) $("#support").hidden = true;
 
-  /* ---- live updates (shortcut used while the popup is open, other tabs, options page) ---- */
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     for (const [k, c] of Object.entries(changes)) if ("newValue" in c) cfg[k] = c.newValue;

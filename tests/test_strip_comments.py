@@ -96,6 +96,16 @@ class StripJs(unittest.TestCase):
                 pos += 1
 
 
+class SourceHasNoComments(unittest.TestCase):
+    """The extension source is kept free of comments (the project is developed with AI agents, which add them by habit)."""
+
+    def test_src_has_no_comments(self):
+        strippers = {".js": strip_js, ".css": strip_css, ".html": strip_html}
+        offenders = [str(f.relative_to(ROOT)) for f in sorted((ROOT / "src").rglob("*"))
+                     if f.suffix in strippers and strippers[f.suffix](f.read_text()) != f.read_text()]
+        self.assertEqual(offenders, [], "comments found; run: python3 scripts/strip_src.py")
+
+
 class StripCssHtml(unittest.TestCase):
     def test_css(self):
         self.assertEqual(strip_css("/* head */\na { color: red; } /* x */\n/* tail */\n"), "a { color: red; }\n")

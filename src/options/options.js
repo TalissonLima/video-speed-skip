@@ -32,9 +32,8 @@
     return g;
   };
 
-  /* ---- saving + feedback ---- */
   let toastTimer;
-  function toast(msg = t("saved"), kind = "ok") { // kind: "ok" | "error"
+  function toast(msg = t("saved"), kind = "ok") {
     const box = $("#toast");
     $("#toastText").textContent = msg;
     box.dataset.kind = kind;
@@ -48,7 +47,6 @@
     if (!quiet) toast();
   }
 
-  // Asks before a destructive action, in a real dialog (Esc or "Cancel" does nothing).
   function ask(textKey, yesKey) {
     return new Promise((resolve) => {
       const dialog = $("#confirm");
@@ -59,14 +57,13 @@
       dialog.returnValue = "";
       dialog.addEventListener("close", () => resolve(dialog.returnValue === "ok"), { once: true });
       dialog.showModal();
-      $("#confirmNo").focus(); // the safe choice is the default one
+      $("#confirmNo").focus();
     });
   }
   const confirmable = (btn, labelKey, textKey, action) => {
     btn.onclick = async () => { if (await ask(textKey, labelKey)) action(); };
   };
 
-  /* ---- navigation (hash based) ---- */
   const SECTIONS = ["dashboard", "shortcuts", "speed", "skip", "appearance", "data"];
   function route() {
     const id = SECTIONS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard";
@@ -79,16 +76,13 @@
   addEventListener("popstate", route);
   $$("[data-nav]").forEach((a) => {
     a.onclick = (e) => {
-      e.preventDefault(); // no anchor jump: the page always starts at the top of the section
+      e.preventDefault();
       history.pushState(null, "", "#" + a.dataset.nav);
       route();
     };
   });
 
-  /* ================================================================== *
-   * Dashboard
-   * ================================================================== */
-  let metric = "s"; // s = seconds saved, a = ads skipped
+  let metric = "s";
   let range = 14;
 
   const pad = (n) => String(n).padStart(2, "0");
@@ -116,7 +110,6 @@
     $$("#metricSeg button").forEach((b) => b.classList.toggle("on", b.dataset.metric === metric));
     $$("#rangeSeg button").forEach((b) => b.classList.toggle("on", Number(b.dataset.range) === range));
 
-    // Bar chart: one column per day.
     const chart = $("#chart");
     chart.textContent = "";
     const vals = keys.map((k) => st.daily[k]?.[metric] ?? 0);
@@ -135,7 +128,7 @@
         bar.style.height = vals[i] ? Math.max(3, (vals[i] / max) * 100) + "%" : "2px";
         wrap.append(bar);
         const date = new Date(k + "T00:00");
-        const monthMark = i === 0 || date.getDate() === 1; // show the month where it changes
+        const monthMark = i === 0 || date.getDate() === 1;
         const label = el("small", "",
           range === 7
             ? date.toLocaleDateString(ui.LOCALES[lang], { weekday: "short" })
@@ -148,7 +141,6 @@
       });
     }
 
-    // Top sites for the selected metric (all time).
     const top = $("#top");
     top.textContent = "";
     const rows = Object.entries(st.sites)
@@ -175,9 +167,6 @@
     renderDashboard();
   });
 
-  /* ================================================================== *
-   * Shortcuts
-   * ================================================================== */
   const ACTIONS = {
     slower: ["aSlower", "hSlower", "×", 0.1], faster: ["aFaster", "hFaster", "×", 0.1],
     setSpeed: ["aSet", "hSet", "×", 1], hold: ["aHold", "hHold", "×", 2],
@@ -195,7 +184,7 @@
     const onKey = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (MODIFIER_CODES.test(e.code)) return; // wait for the real key
+      if (MODIFIER_CODES.test(e.code)) return;
       removeEventListener("keydown", onKey, true);
       if (e.code !== "Escape") {
         Object.assign(cfg.shortcuts[index], {
@@ -208,12 +197,10 @@
     addEventListener("keydown", onKey, true);
   }
 
-  // The list keeps the order the user gives it (when two shortcuts share a key, the first one wins).
-  // Reorder by dragging the handle, or focus it and press the up / down arrow keys.
   const GRIP = '<svg viewBox="0 0 12 16" aria-hidden="true"><circle cx="3" cy="3" r="1.3"/><circle cx="9" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="9" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="9" cy="13" r="1.3"/></svg>';
   let dragFrom = null;
 
-  function moveShortcut(from, to) { // `to` is the final position
+  function moveShortcut(from, to) {
     if (from === to || to < 0 || to >= cfg.shortcuts.length) return;
     const [item] = cfg.shortcuts.splice(from, 1);
     cfg.shortcuts.splice(to, 0, item);
@@ -237,7 +224,7 @@
       grip.innerHTML = GRIP;
       grip.title = t("moveShortcut");
       grip.setAttribute("aria-label", t("moveShortcut"));
-      grip.onmousedown = () => { wrap.draggable = true; };   // only the handle starts a drag, not the fields
+      grip.onmousedown = () => { wrap.draggable = true; };
       grip.onkeydown = (e) => {
         if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
         e.preventDefault();
@@ -265,7 +252,7 @@
         if (dragFrom === null) return;
         e.preventDefault();
         let to = i + (after(e) ? 1 : 0);
-        if (dragFrom < to) to -= 1; // the dragged row leaves its old place first
+        if (dragFrom < to) to -= 1;
         const from = dragFrom;
         dragFrom = null;
         moveShortcut(from, to);
@@ -308,7 +295,6 @@
     cfg.shortcuts.push({ action: "setSpeed", value: 2, code: "", label: "", ctrl: false, alt: false, shift: false });
     saveShortcuts();
     renderShortcuts();
-    // go straight to "press a key" on the new row (it sits inside its group, not at the end)
     const added = $(`#sc [data-index="${cfg.shortcuts.length - 1}"]`);
     added?.scrollIntoView({ block: "center" });
     added?.querySelector(".keybtn").click();
@@ -319,9 +305,6 @@
     renderShortcuts();
   });
 
-  /* ================================================================== *
-   * Speed
-   * ================================================================== */
   function renderSpeed() {
     $$("#scope .choice").forEach((c) => c.classList.toggle("on", c.dataset.scope === cfg.speedScope));
     $("#presets").value = cfg.presets.join(", ");
@@ -360,13 +343,10 @@
       .filter((n) => Number.isFinite(n) && n >= MIN && n <= MAX).map((n) => Math.round(n * 100) / 100))]
       .sort((a, b) => a - b).slice(0, 6);
     if (list.length) save({ presets: list });
-    renderSpeed(); // normalises what the user typed (or restores it if it was invalid)
+    renderSpeed();
   };
   confirmable($("#clearSites"), "clearAll", "confirmSites", () => { save({ siteSpeeds: {} }); renderSpeed(); });
 
-  /* ================================================================== *
-   * Skipping
-   * ================================================================== */
   function renderPaused() {
     const list = $("#pausedList");
     list.textContent = "";
@@ -380,7 +360,6 @@
     });
   }
 
-  // A number next to a switch (ad speed, live catch-up speed): validated, saved on change.
   function numberSetting(id, key, lo, hi) {
     const input = $("#" + id);
     input.value = cfg[key];
@@ -406,10 +385,7 @@
   }
   syncDependents();
 
-  /* ================================================================== *
-   * Appearance
-   * ================================================================== */
-  const BADGE_PX = { s: 9, m: 11, l: 14 }; // scaled down to fit the mock screen
+  const BADGE_PX = { s: 9, m: 11, l: 14 };
 
   function renderAppearance() {
     const pos = cfg.overlayPos, badge = $("#badge");
@@ -435,10 +411,7 @@
     b.onclick = () => { lang = b.dataset.lang; save({ lang }, true); renderAll(); toast(); };
   });
 
-  /* ================================================================== *
-   * Data: backup / restore / reset
-   * ================================================================== */
-  const EXPORT_KEYS = VSS.SETTING_KEYS; // the same settings that sync uses (no statistics)
+  const EXPORT_KEYS = VSS.SETTING_KEYS;
   const ENUMS = {
     speedScope: ["site", "global"], overlaySize: ["s", "m", "l"], lang: ["auto", ...ui.LANGS],
     overlayPos: ["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]
@@ -480,7 +453,7 @@
     try {
       await navigator.clipboard.writeText(exportJson());
       toast(t("copied"));
-    } catch { /* clipboard blocked */ }
+    } catch {  }
   };
   $("#exportFile").onclick = () => {
     const a = el("a");
@@ -503,7 +476,6 @@
       $("#importMsg").textContent = t("invalidSettings");
     }
   };
-  // Sync settings through the browser's own sync (opt-in).
   $("#syncSettings").checked = !!cfg.syncSettings;
   $("#syncSettings").onchange = async (e) => {
     const box = e.target, want = box.checked;
@@ -523,7 +495,6 @@
     location.reload();
   });
 
-  /* ---- support + about ---- */
   const { buyMeACoffee, pixKey, repo } = VSS_CONFIG;
   if (buyMeACoffee) $("#bmc").href = buyMeACoffee; else $("#bmc").hidden = true;
   if (repo) $("#repo").href = repo; else $("#repo").hidden = true;
@@ -535,13 +506,10 @@
         await navigator.clipboard.writeText(pixKey);
         pix.textContent = "✓ " + t("pixCopied");
         setTimeout(() => (pix.textContent = t("copyPix")), 1800);
-      } catch { /* clipboard blocked */ }
+      } catch {  }
     };
   }
 
-  /* ================================================================== *
-   * Boot
-   * ================================================================== */
   function renderAll() {
     document.documentElement.lang = lang === "pt" ? "pt-BR" : lang;
     ui.translate(document, t);
@@ -554,7 +522,6 @@
     renderAppearance();
   }
 
-  // Keep the dashboard live while the page is open (stats are written by the content scripts).
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     for (const [k, c] of Object.entries(changes)) {

@@ -1,4 +1,3 @@
-// UI helpers shared by the popup and the options page (needs defaults.js and i18n.js first).
 (() => {
   const LANGS = ["en", "pt", "es"];
   const LOCALES = { en: "en-US", pt: "pt-BR", es: "es-ES" };
@@ -22,7 +21,6 @@
         (VSS_I18N[getLang()][key] ?? VSS_I18N.en[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
     },
 
-    // Fills every [data-i18n] (text), [data-i18n-title] (tooltip + aria-label) and [data-i18n-ph] (placeholder).
     translate(root, t) {
       root.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
       root.querySelectorAll("[data-i18n-title]").forEach((el) => {
@@ -38,7 +36,6 @@
       return h ? `${h}h ${m}m` : m ? `${m}m` : `${sec}s`;
     },
 
-    // PIX only makes sense for people in Brazil.
     inBrazil() {
       return /^pt-BR$/i.test(navigator.language) || BRAZIL_TZ.test(Intl.DateTimeFormat().resolvedOptions().timeZone);
     },

@@ -1,4 +1,3 @@
-// All UI strings. {placeholders} are filled by VSS.ui.makeT().
 globalThis.VSS_I18N = {
   en: {
     tagline: "Watch faster. Skip sooner.",

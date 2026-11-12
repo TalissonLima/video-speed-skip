@@ -113,10 +113,10 @@ Si te ahorra tiempo, puedes invitarme a un café: https://buymeacoffee.com/talis
 ## Firefox Add-ons notes
 
 - The manifest declares `data_collection_permissions: { required: ["none"] }`.
-- The package is built from this repository with `python3 scripts/build.py`: the only processing is stripping comments
-  (no minification, no bundling). When asked for source code, upload this repository (a `git archive` zip) and point to the
-  build command above.
-- Reviewer note: no account is needed. To test, open any page with a `<video>` and press `D` (faster) / `S` (slower).
+- The package is `src/` plus the per-browser manifest keys (`python3 scripts/build.py`): no minification, no bundling, no
+  transpiling, so the store should not ask for source code. If it does, upload `video-speed-skip-source-v<version>.zip` and
+  point to the build command above.
+- Reviewer note: no account is needed. To test, open any page with a `<video>` and press `D` (faster) / `A` (slower).
 
 ## Microsoft Edge Add-ons
 
@@ -140,7 +140,7 @@ Si te ahorra tiempo, puedes invitarme a un café: https://buymeacoffee.com/talis
 
 - **Package:** the Chrome zip; if the uploader rejects a zip, pack the same folder as a `.crx` in Opera (opera:extensions, Developer mode, Pack extension).
 - **Review:** manual and slower than the other stores (days to a few weeks); reviewers may want to read the source, so keep
-  `video-speed-skip-source-v<version>.zip` at hand. The code in the package is readable (only comments are removed, nothing is minified).
+  `video-speed-skip-source-v<version>.zip` at hand. The code in the package is the source itself (nothing is minified, bundled or transpiled).
 - **Listing:** name `Video Speed & Skip` (it must not contain "Opera"), short description (plain text, 132 characters at most)
   and the English long description above, icon `src/icons/icon-128.png`, category Productivity, license MIT.
 - **Screenshots:** at most **800x600** (preferred 612x408): use `docs/store/screenshots-opera/en/`, which are 800x500.
