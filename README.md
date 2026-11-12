@@ -2,7 +2,7 @@
 
 Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencies**).
 
-- **Speed control** — any video, 0.1× to 16×, on-video badge (9 positions, size, opacity, optionally always visible)
+- **Speed control** — any video, 0.1× to 16×, on-video badge (corner, size, opacity, optionally always visible; quick rewind/forward presses add up: 3 × 10 s shows +30s)
 - **Per-site speed** — each website remembers its own speed (or switch to one global speed)
 - **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" the moment the button appears (see *Known limitations* for YouTube)
 - **Ad speed** (optional, off by default) — ads play at a speed you choose (1.2× by default) and yours returns afterwards (YouTube ads are detected)

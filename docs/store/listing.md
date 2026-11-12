@@ -23,7 +23,7 @@ Ready-to-paste text for the Chrome Web Store and Firefox Add-ons (AMO). Screensh
 Watch videos at the speed you like, and skip the ads for you.
 
 **Speed**
-- Any video, from 0.1× to 16×, with a small badge on the video (9 positions, size, opacity, optionally always visible).
+- Any video, from 0.1× to 16×, with a small badge on the video (position, size, opacity, optionally always visible).
 - Each website remembers its own speed (or use one speed everywhere).
 - Fully configurable keyboard shortcuts: pick the key, the action and the value. Faster, slower, set a speed, hold a key for a temporary speed, toggle between two speeds, rewind, forward, pause the extension on a site.
 - Keeps voices natural at high speeds.
@@ -50,7 +50,7 @@ If it saves you time, you can buy me a coffee from the popup. Nothing is locked 
 Assista aos vídeos na velocidade que você gosta, e deixe que a extensão pule os anúncios.
 
 **Velocidade**
-- Qualquer vídeo, de 0,1× a 16×, com um indicador sobre o vídeo (9 posições, tamanho, opacidade, e opcionalmente sempre visível).
+- Qualquer vídeo, de 0,1× a 16×, com um indicador sobre o vídeo (posição, tamanho, opacidade, e opcionalmente sempre visível).
 - Cada site lembra a própria velocidade (ou use uma velocidade única em todo lugar).
 - Atalhos de teclado totalmente configuráveis: escolha a tecla, a ação e o valor. Mais rápido, mais lento, definir velocidade, segurar uma tecla para acelerar temporariamente, alternar entre duas velocidades, voltar, avançar e pausar a extensão em um site.
 - Mantém as vozes naturais em velocidades altas.
@@ -77,7 +77,7 @@ Se a extensão economiza seu tempo, você pode me pagar um café pelo popup. Nad
 Mira los vídeos a la velocidad que prefieras y deja que la extensión salte los anuncios.
 
 **Velocidad**
-- Cualquier vídeo, de 0,1× a 16×, con un indicador sobre el vídeo (9 posiciones, tamaño, opacidad y, opcionalmente, siempre visible).
+- Cualquier vídeo, de 0,1× a 16×, con un indicador sobre el vídeo (posición, tamaño, opacidad y, opcionalmente, siempre visible).
 - Cada sitio recuerda su propia velocidad (o usa una sola velocidad en todas partes).
 - Atajos de teclado totalmente configurables: elige la tecla, la acción y el valor. Más rápido, más lento, fijar velocidad, mantener una tecla para acelerar temporalmente, alternar entre dos velocidades, retroceder, avanzar y pausar la extensión en un sitio.
 - Mantiene las voces naturales a altas velocidades.
@@ -129,9 +129,14 @@ Suggested captions:
 3. **Shortcuts:** "Your keys, your speeds"
 4. **Speed:** "Each site remembers its speed"
 
+## What's new (0.5.1)
+
+- Quick rewind/forward presses add up on the badge (3 × 10 s shows +30s) and start over after 3 s without pressing.
+- The badge position is picked among the four corners.
+
 ## What's new (0.5.0)
 
-- Always-visible speed badge (with a shortcut), adjustable opacity and 9 positions (middle/center suit vertical videos).
+- Always-visible speed badge (with a shortcut) and adjustable opacity.
 - Optional ad speed (1.2× by default, off by default). Voices are always kept natural: the pitch option is gone.
 - Live streams: shortcut to jump to the live edge and optional automatic catch-up.
 - Fix: the jump-to-the-end-of-the-ad fallback no longer touches live streams.

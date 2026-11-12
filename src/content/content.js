@@ -255,6 +255,17 @@
   document.addEventListener("keyup", (e) => { if (held && e.code === held.code) releaseHold(); }, true);
   addEventListener("blur", releaseHold);
 
+  // Seeks made in quick succession add up on the badge: 3 x "forward 10 s" shows "+30s".
+  // After 3 s without pressing, the total starts over (see shared/seek.js).
+  let seekTotal = 0, seekAt = 0;
+  function seekBy(v, delta) {
+    const now = Date.now();
+    seekTotal = VSS.seek.accumulate(seekTotal, delta, now - seekAt);
+    seekAt = now;
+    v.currentTime = Math.max(0, v.currentTime + delta);
+    flash(VSS.seek.label(seekTotal));
+  }
+
   function toggleSite() {
     const host = hostname();
     const set = new Set(cfg.disabledSites);
@@ -312,8 +323,8 @@
         flash(cfg.overlayAlways ? "◉ ON" : "○ OFF");
         break;
       case "goLive": goLive(v); break;
-      case "rewind": v.currentTime = Math.max(0, v.currentTime - (n || 10)); flash(`−${n || 10}s`); break;
-      case "forward": v.currentTime += n || 10; flash(`+${n || 10}s`); break;
+      case "rewind": seekBy(v, -(n || 10)); break;
+      case "forward": seekBy(v, n || 10); break;
       default: return;
     }
     e.preventDefault();

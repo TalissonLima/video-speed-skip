@@ -78,7 +78,7 @@ def main():
           ku('KeyH'); await sleep(100); out.holdUp = v.playbackRate;
           kd('KeyT'); await sleep(100); out.toggleOn = v.playbackRate;
           kd('KeyT'); await sleep(100); out.toggleOff = v.playbackRate;
-          const t0 = v.currentTime; kd('KeyX'); await sleep(100); out.forward = v.currentTime - t0;
+          const t0 = v.currentTime; kd('KeyX'); kd('KeyX'); await sleep(100); out.forward = v.currentTime - t0;
           return out;
         """)
         check("D D raises speed to 1.2x", approx(r["faster"], 1.2), r["faster"])
@@ -86,7 +86,7 @@ def main():
         check("R resets to 1x", approx(r["reset"], 1.0), r["reset"])
         check("hold: 3x while the key is down, back on release", approx(r["holdDown"], 3) and approx(r["holdUp"], r["base"]), r)
         check("toggle: jumps to 2x and back", approx(r["toggleOn"], 2) and approx(r["toggleOff"], r["base"]), r)
-        check("X moves forward ~10s", r["forward"] > 5, r["forward"])
+        check("X pressed twice moves forward ~20s", r["forward"] > 15, r["forward"])
 
         # ------------------------------------------------------------------ pause site + normal speed in ads
         print("Content script: pause shortcut and ads at normal speed")
@@ -272,6 +272,12 @@ def main():
           out.pickFinite = L.pickAd([v(Infinity, false), idleAd]) === idleAd;
           out.pickNone = L.pickAd([stream]) === null;                  // only the stream: nothing to skip
           out.pickPlaying = L.pickAd([idleAd, ad]) === ad;             // the playing one wins
+          const S = VSS.seek;
+          out.seekSum = S.accumulate(10, 10, 500);                     // quick presses add up: 20
+          out.seekReset = S.accumulate(30, 10, 3500);                  // a pause of more than 3 s starts over: 10
+          out.seekNet = S.accumulate(10, -10, 1000);                   // opposite direction: net 0
+          out.seekFirst = S.accumulate(0, 10, 1e9);                    // first press ever
+          out.labels = [S.label(30), S.label(-20), S.label(0), S.label(2.5)];
           return out;
         """)
         check("far behind the live edge is left alone", r["far"] == "keep", r)
@@ -283,6 +289,9 @@ def main():
         check("live edge comes from the seekable ranges", r["edge30"] == 30 and r["edgeNone"] == [True, True], r)
         check("ad video: never the long stream", r["pickShort"] and r["pickFinite"] and r["pickNone"], r)
         check("ad video: the playing one is preferred", r["pickPlaying"], r)
+        check("seek badge: quick presses add up (3 x 10 s = +30s)", r["seekSum"] == 20 and r["labels"][0] == "+30s", r)
+        check("seek badge: a pause longer than 3 s starts over", r["seekReset"] == 10 and r["seekFirst"] == 10, r)
+        check("seek badge: opposite direction nets out", r["seekNet"] == 0 and r["labels"][1:] == ["−20s", "0s", "+2.5s"], r)
 
         # ------------------------------------------------------------------ always-visible badge
         print("Content script: always-visible badge")
@@ -330,7 +339,7 @@ def main():
         check("quick speeds are normalised", r["presets"] == "1, 1.5, 2, 3", r["presets"])
         check("new controls exist (ad speed, opacity, always visible, live)", r["newControls"])
         check("voice pitch option is gone", r["noPitchOption"])
-        check("9 badge positions", r["positions"] == 9, r["positions"])
+        check("badge position can be picked in the 4 corners", r["positions"] == 4, r["positions"])
         check("live and badge shortcuts are offered", "goLive" in r["actions"] and "toggleAlways" in r["actions"], r["actions"])
 
         # ------------------------------------------------------------------ popup
