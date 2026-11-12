@@ -19,6 +19,7 @@
   let active = false;      // false until the page actually has a video
   let lastAd = false;      // was an ad playing at the last scan?
   let adChangedAt = 0;     // when an ad started/ended (to ignore the site's own rate resets)
+  let liveBoost = null;    // catch-up speed while we close the gap to a live stream
 
   /* ------------------------------------------------------------------ *
    * Helpers
@@ -42,9 +43,21 @@
   const AD_PLAYING = ".html5-video-player.ad-showing, .html5-video-player.ad-interrupting";
   const adPlaying = () => !!document.querySelector(AD_PLAYING);
 
-  // Speed we want right now: held key > normal speed during ads > saved speed.
-  const speedNow = () =>
-    tempSpeed ?? (cfg.adNormalSpeed && adPlaying() ? 1 : VSS.speedFor(cfg, hostname()));
+  // A live stream: infinite duration, or YouTube's live markers. Never fast-forward those.
+  function isLive(v) {
+    if (v && !Number.isFinite(v.duration)) return true;
+    if (document.querySelector(".html5-video-player.ytp-live")) return true;
+    const badge = document.querySelector(".ytp-live-badge");
+    return !!(badge && visible(badge));
+  }
+
+  // Speed we want right now: held key > ad speed (opt-in) > live catch-up > saved speed.
+  const speedNow = () => {
+    if (tempSpeed !== null) return tempSpeed;
+    if (cfg.adNormalSpeed && adPlaying()) return clamp(Number(cfg.adSpeed) || 1.2);
+    const base = VSS.speedFor(cfg, hostname());
+    return liveBoost ? Math.max(base, liveBoost) : base;
+  };
 
   /* ------------------------------------------------------------------ *
    * Finding videos (also inside open shadow roots, e.g. web-component players)
@@ -100,36 +113,66 @@
            background:rgba(17,17,27,.82);backdrop-filter:blur(6px);padding:.57em .86em;border-radius:.72em;
            box-shadow:0 4px 16px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);
            opacity:0;transform:translateY(-4px);transition:opacity .18s,transform .18s}
-        .b.on{opacity:1;transform:none}
+        .b.on{opacity:var(--o,1);transform:none}
       </style><div class="b"></div>`;
     badge = root.querySelector(".b");
   }
 
-  // `force` shows the badge even on a paused site (used by the pause shortcut itself).
-  function flash(text, force = false) {
-    if (!cfg.overlay || (!force && !enabled())) return;
+  let alwaysShown = false; // is the badge currently pinned by "always visible"?
+  let flashUntil = 0;
+
+  // Puts the badge on the video. `force` shows it even on a paused site (the pause shortcut itself).
+  function placeBadge(text, force = false) {
+    if (!cfg.overlay || (!force && !enabled())) return false;
     const v = pickVideo();
-    if (!v) return;
+    if (!v) return false;
     if (!overlayHost) buildOverlay();
 
     let parent = document.fullscreenElement || document.documentElement;
     if (parent instanceof HTMLVideoElement) parent = parent.parentElement || document.documentElement;
     if (overlayHost.parentNode !== parent) parent.appendChild(overlayHost);
 
+    // 3x3 grid relative to the video: row t/m/b, column l/c/r. The middle row/column are handy for
+    // vertical videos (Shorts, Reels) where the corners are covered by the site's own buttons.
     const r = v.getBoundingClientRect();
-    const pos = cfg.overlayPos || "tl";
+    const [row, col] = (cfg.overlayPos || "tl").split("");
     const m = 12, s = overlayHost.style;
+    let tx = "0", ty = "0";
     s.left = s.right = s.top = s.bottom = "auto";
-    if (pos[1] === "l") s.left = Math.max(8, r.left + m) + "px";
-    else s.right = Math.max(8, innerWidth - r.right + m) + "px";
-    if (pos[0] === "t") s.top = Math.max(8, r.top + m) + "px";
-    else s.bottom = Math.max(8, innerHeight - r.bottom + m) + "px";
+    if (col === "l") s.left = Math.max(8, r.left + m) + "px";
+    else if (col === "r") s.right = Math.max(8, innerWidth - r.right + m) + "px";
+    else { s.left = r.left + r.width / 2 + "px"; tx = "-50%"; }
+    if (row === "t") s.top = Math.max(8, r.top + m) + "px";
+    else if (row === "b") s.bottom = Math.max(8, innerHeight - r.bottom + m) + "px";
+    else { s.top = r.top + r.height / 2 + "px"; ty = "-50%"; }
+    s.transform = `translate(${tx}, ${ty})`;
 
     badge.style.fontSize = (SIZES[cfg.overlaySize] ?? 14) + "px";
+    badge.style.setProperty("--o", String(cfg.overlayOpacity ?? 1));
     badge.textContent = text;
     badge.classList.add("on");
+    return true;
+  }
+
+  // Shows a message briefly (or lets the always-visible badge pick the speed up again right after).
+  function flash(text, force = false) {
+    if (!placeBadge(text, force)) return;
+    flashUntil = Date.now() + 1200;
     clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => badge.classList.remove("on"), 1200);
+    if (!cfg.overlayAlways) hideTimer = setTimeout(() => badge.classList.remove("on"), 1200);
+  }
+
+  // "Always visible" mode: keep the current speed on the video, following it around.
+  function refreshBadge() {
+    if (!cfg.overlayAlways) {
+      if (alwaysShown && Date.now() >= flashUntil) { alwaysShown = false; badge?.classList.remove("on"); }
+      return;
+    }
+    alwaysShown = true;
+    const v = pickVideo();
+    const r = v?.getBoundingClientRect();
+    const onScreen = r && r.width > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+    if (!(onScreen && placeBadge(fmt(speedNow())))) badge?.classList.remove("on");
   }
 
   /* ------------------------------------------------------------------ *
@@ -137,8 +180,8 @@
    * ------------------------------------------------------------------ */
   function applySpeed(v) {
     if (!enabled()) return;
-    if ("preservesPitch" in v) v.preservesPitch = !!cfg.preservePitch;
-    else if ("mozPreservesPitch" in v) v.mozPreservesPitch = !!cfg.preservePitch;
+    if ("preservesPitch" in v) v.preservesPitch = true; // always keep voices natural
+    else if ("mozPreservesPitch" in v) v.mozPreservesPitch = true;
     const want = speedNow();
     if (near(v.playbackRate, want)) return;
     v.__vssSetting = true;
@@ -263,6 +306,12 @@
         VSS.save({ autoSkip: cfg.autoSkip });
         flash(cfg.autoSkip ? "⏭ ON" : "⏭ OFF");
         break;
+      case "toggleAlways":
+        cfg.overlayAlways = !cfg.overlayAlways;
+        VSS.save({ overlayAlways: cfg.overlayAlways });
+        flash(cfg.overlayAlways ? "◉ ON" : "○ OFF");
+        break;
+      case "goLive": goLive(v); break;
       case "rewind": v.currentTime = Math.max(0, v.currentTime - (n || 10)); flash(`−${n || 10}s`); break;
       case "forward": v.currentTime += n || 10; flash(`+${n || 10}s`); break;
       default: return;
@@ -356,8 +405,14 @@
     }
   }
 
-  const adVideo = () =>
-    document.querySelector(".html5-video-player.ad-showing video, .html5-video-player.ad-interrupting video");
+  // The <video> that is playing the AD. On live streams YouTube may keep the stream in another <video>
+  // inside the same player, so never just take the first one: an ad is short, finite and playing.
+  // And never on a live stream: jumping to the "end" there would throw away the viewer's position.
+  function adVideo() {
+    const player = document.querySelector(AD_PLAYING);
+    if (!player || isLive(null)) return null;
+    return VSS.live.pickAd([...player.querySelectorAll("video")]);
+  }
 
   async function recordSkipFailure() {
     try {
@@ -489,10 +544,32 @@
     lastTick = now;
     if (enabled()) {
       const v = mainPlaying();
-      if (v && v.playbackRate > 1) pendingSaved += (v.playbackRate - 1) * dt;
+      if (v && v.playbackRate > 1 && !liveBoost) pendingSaved += (v.playbackRate - 1) * dt; // catching up isn't "saved"
     }
     if (pendingSaved >= 5) flushSaved();
   }
+  /* ------------------------------------------------------------------ *
+   * Live streams: jump to the live edge, or (opt-in) catch up to it by playing a bit faster
+   * ------------------------------------------------------------------ */
+  const liveEdge = (v) => VSS.live.edge(v.seekable);
+
+  function goLive(v) {
+    const edge = liveEdge(v);
+    if (!isLive(v) || !Number.isFinite(edge)) return;
+    v.currentTime = Math.max(0, edge - 0.5);
+    flash("● LIVE");
+  }
+
+  // The thresholds live in shared/live.js. A stream watched far behind on purpose is left alone, and
+  // nothing happens while the video is paused (mainPlaying() is null then).
+  function liveTick() {
+    const v = cfg.liveCatchUp && enabled() ? mainPlaying() : null;
+    const lag = v && isLive(v) ? liveEdge(v) - v.currentTime : NaN;
+    const action = VSS.live.decide(lag, liveBoost !== null);
+    if (action === "stop") { liveBoost = null; applyAll(); }
+    else if (action === "start") { liveBoost = clamp(Number(cfg.liveCatchUpSpeed) || 1.25); applyAll(); }
+  }
+
   addEventListener("pagehide", flushSaved);
   document.addEventListener("visibilitychange", () => { if (document.hidden) flushSaved(); });
 
@@ -524,6 +601,8 @@
     });
     setInterval(scan, 1000);       // safety net for changes the observer can't see
     setInterval(tickStats, 1000);
+    setInterval(liveTick, 1000);
+    setInterval(refreshBadge, 400); // only does work while "always visible" is on
     applyAll();
     scan();
   }
@@ -534,7 +613,7 @@
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     for (const [k, c] of Object.entries(changes)) if ("newValue" in c) cfg[k] = c.newValue;
-    if (["speed", "siteSpeeds", "speedScope", "preservePitch", "adNormalSpeed", "disabledSites"].some((k) => k in changes)) applyAll();
+    if (["speed", "siteSpeeds", "speedScope", "adNormalSpeed", "adSpeed", "disabledSites"].some((k) => k in changes)) applyAll();
   });
 
   listen(document);

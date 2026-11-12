@@ -3,7 +3,8 @@
   const api = globalThis.browser ?? globalThis.chrome;
 
   // action: slower | faster (value = step) · setSpeed | hold | toggle (value = speed)
-  //         rewind | forward (value = seconds) · toggleSkip (no value)
+  //         rewind | forward (value = seconds)
+  //         toggleSkip | toggleSite | toggleAlways | goLive (no value)
   // code is KeyboardEvent.code (layout independent); label is what we display.
   const key = (action, value, code, label) =>
     ({ action, value, code, label, ctrl: false, alt: false, shift: false });
@@ -25,9 +26,13 @@
     overlay: true,        // show the on-video speed badge
     overlayPos: "tl",      // tl | tr | bl | br
     overlaySize: "m",      // s | m | l
-    preservePitch: true,   // keep voices natural at high speeds
+    overlayOpacity: 1,     // 0.2 - 1
+    overlayAlways: false,  // keep the badge visible on the video (toggle with a shortcut)
     autoSkip: true,        // auto-click "Skip Ad" buttons
-    adNormalSpeed: true,   // play ads at 1x (then go back to your speed)
+    adNormalSpeed: false,  // play ads at adSpeed (then go back to your speed); off by default
+    adSpeed: 1.2,
+    liveCatchUp: false,    // on live streams a few seconds behind, play faster until we reach the live edge
+    liveCatchUpSpeed: 1.25,
     adSkipFallback: true,  // experimental (on while testing): if the site ignores the click, jump to the end of the (skippable) ad
     skipFails: 0,          // ad skips the site ignored (shown as a hint in the popup / options)
     skipIntro: false,      // auto-click "Skip Intro / Recap" on streaming sites

@@ -181,6 +181,7 @@
     setSpeed: ["aSet", "hSet", "×", 1], hold: ["aHold", "hHold", "×", 2],
     toggle: ["aToggle", "hToggle", "×", 2], toggleSkip: ["aToggleSkip", "hToggleSkip", "", 0],
     toggleSite: ["aToggleSite", "hToggleSite", "", 0],
+    toggleAlways: ["aToggleAlways", "hToggleAlways", "", 0], goLive: ["aGoLive", "hGoLive", "", 0],
     rewind: ["aBack", "hBack", "s", 10], forward: ["aForward", "hForward", "s", 10]
   };
   const MODIFIER_CODES = /^(Control|Shift|Alt|Meta)(Left|Right)$/;
@@ -238,7 +239,7 @@
         if (n > 0) { s.value = n; saveShortcuts(); }
       };
       const group = valueGroup(val, ACTIONS[s.action][2]);
-      group.style.visibility = s.action === "toggleSkip" || s.action === "toggleSite" ? "hidden" : "";
+      group.style.visibility = ["toggleSkip", "toggleSite", "toggleAlways", "goLive"].includes(s.action) ? "hidden" : "";
 
       const del = removeButton(() => { cfg.shortcuts.splice(i, 1); saveShortcuts(); renderShortcuts(); });
 
@@ -327,7 +328,20 @@
   }
   $("#clearFails").onclick = () => { save({ skipFails: 0 }); renderNotice(); };
 
-  for (const key of ["autoSkip", "skipIntro", "adNormalSpeed", "adSkipFallback", "overlay", "preservePitch"]) {
+  // A number next to a switch (ad speed, live catch-up speed): validated, saved on change.
+  function numberSetting(id, key, lo, hi) {
+    const input = $("#" + id);
+    input.value = cfg[key];
+    input.onchange = () => {
+      const n = Number(input.value);
+      if (!Number.isFinite(n) || n < lo || n > hi) { input.value = cfg[key]; return; }
+      save({ [key]: Math.round(n * 100) / 100 });
+    };
+  }
+  numberSetting("adSpeed", "adSpeed", MIN, MAX);
+  numberSetting("liveSpeed", "liveCatchUpSpeed", 1.05, 2);
+
+  for (const key of ["autoSkip", "skipIntro", "adNormalSpeed", "adSkipFallback", "liveCatchUp", "overlay", "overlayAlways"]) {
     const box = $("#" + key);
     box.checked = cfg[key];
     box.onchange = () => save({ [key]: box.checked });
@@ -340,10 +354,15 @@
 
   function renderAppearance() {
     const pos = cfg.overlayPos, badge = $("#badge");
+    const [row, col] = pos.split("");
     $$("#screen [data-pos]").forEach((b) => (b.style.visibility = b.dataset.pos === pos ? "hidden" : ""));
     badge.style.cssText = `font-size:${BADGE_PX[cfg.overlaySize] ?? 11}px;` +
-      `${pos[0] === "t" ? "top" : "bottom"}:8px;${pos[1] === "l" ? "left" : "right"}:8px;` +
-      `opacity:${cfg.overlay ? 1 : 0.25}`;
+      `${row === "t" ? "top:8px" : row === "b" ? "bottom:8px" : "top:50%"};` +
+      `${col === "l" ? "left:8px" : col === "r" ? "right:8px" : "left:50%"};` +
+      `transform:translate(${col === "c" ? "-50%" : "0"},${row === "m" ? "-50%" : "0"});` +
+      `opacity:${cfg.overlay ? cfg.overlayOpacity : 0.25}`;
+    $("#overlayOpacity").value = Math.round(cfg.overlayOpacity * 100);
+    $("#opacityVal").textContent = Math.round(cfg.overlayOpacity * 100) + "%";
     $$("#sizeSeg button").forEach((b) => b.classList.toggle("on", b.dataset.size === cfg.overlaySize));
     $$("#langSeg button").forEach((b) => b.classList.toggle("on", b.dataset.lang === lang));
   }
@@ -351,6 +370,14 @@
   $$("#screen [data-pos]").forEach((b) => (b.onclick = () => { save({ overlayPos: b.dataset.pos }); renderAppearance(); }));
   $$("#sizeSeg button").forEach((b) => (b.onclick = () => { save({ overlaySize: b.dataset.size }); renderAppearance(); }));
   $("#overlay").addEventListener("change", renderAppearance);
+  $("#overlayOpacity").oninput = (e) => { save({ overlayOpacity: Number(e.target.value) / 100 }, true); renderAppearance(); };
+  $("#overlayOpacity").onchange = () => toast();
+  $$("#shapeSeg button").forEach((b) => {   // preview only: how the positions look on a vertical video
+    b.onclick = () => {
+      $("#screen").classList.toggle("vertical", b.dataset.shape === "v");
+      $$("#shapeSeg button").forEach((x) => x.classList.toggle("on", x === b));
+    };
+  });
   $$("#langSeg button").forEach((b) => {
     b.onclick = () => { lang = b.dataset.lang; save({ lang }, true); renderAll(); toast(); };
   });
@@ -359,8 +386,12 @@
    * Data: backup / restore / reset
    * ================================================================== */
   const EXPORT_KEYS = ["speed", "speedScope", "siteSpeeds", "presets", "shortcuts", "overlay", "overlayPos",
-    "overlaySize", "preservePitch", "autoSkip", "skipIntro", "adNormalSpeed", "adSkipFallback", "lang", "disabledSites"];
-  const ENUMS = { speedScope: ["site", "global"], overlayPos: ["tl", "tr", "bl", "br"], overlaySize: ["s", "m", "l"], lang: ["auto", ...ui.LANGS] };
+    "overlaySize", "overlayOpacity", "overlayAlways", "autoSkip", "skipIntro", "adNormalSpeed", "adSpeed",
+    "adSkipFallback", "liveCatchUp", "liveCatchUpSpeed", "lang", "disabledSites"];
+  const ENUMS = {
+    speedScope: ["site", "global"], overlaySize: ["s", "m", "l"], lang: ["auto", ...ui.LANGS],
+    overlayPos: ["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]
+  };
 
   function sanitize(raw) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("not an object");

@@ -23,15 +23,16 @@ Ready-to-paste text for the Chrome Web Store and Firefox Add-ons (AMO). Screensh
 Watch videos at the speed you like, and skip the ads for you.
 
 **Speed**
-- Any video, from 0.1× to 16×, with a small badge on the video (position and size are up to you).
+- Any video, from 0.1× to 16×, with a small badge on the video (9 positions, size, opacity, optionally always visible).
 - Each website remembers its own speed (or use one speed everywhere).
 - Fully configurable keyboard shortcuts: pick the key, the action and the value. Faster, slower, set a speed, hold a key for a temporary speed, toggle between two speeds, rewind, forward, pause the extension on a site.
 - Keeps voices natural at high speeds.
+- Live streams: jump to the live edge with a shortcut, or let the extension catch up to it automatically.
 
 **Skip ads**
 - Clicks "Skip Ad" the moment the button appears, on sites that accept it.
 - YouTube ignores clicks made by scripts, so there the button can't always be pressed for you. An optional, experimental setting jumps skippable ads to their end instead, and the extension tells you when a skip was ignored.
-- Plays ads at normal speed and returns to your speed afterwards.
+- Optional: plays ads at a speed you choose and returns to yours afterwards.
 - Optional: skips intros and recaps on streaming sites.
 
 **Dashboard**
@@ -49,15 +50,16 @@ If it saves you time, you can buy me a coffee from the popup. Nothing is locked 
 Assista aos vídeos na velocidade que você gosta, e deixe que a extensão pule os anúncios.
 
 **Velocidade**
-- Qualquer vídeo, de 0,1× a 16×, com um indicador sobre o vídeo (posição e tamanho você escolhe).
+- Qualquer vídeo, de 0,1× a 16×, com um indicador sobre o vídeo (9 posições, tamanho, opacidade, e opcionalmente sempre visível).
 - Cada site lembra a própria velocidade (ou use uma velocidade única em todo lugar).
 - Atalhos de teclado totalmente configuráveis: escolha a tecla, a ação e o valor. Mais rápido, mais lento, definir velocidade, segurar uma tecla para acelerar temporariamente, alternar entre duas velocidades, voltar, avançar e pausar a extensão em um site.
 - Mantém as vozes naturais em velocidades altas.
+- Transmissões ao vivo: vá para o ponto ao vivo com um atalho, ou deixe a extensão alcançá-lo automaticamente.
 
 **Pular anúncios**
 - Clica em "Pular anúncio" assim que o botão aparece, nos sites que aceitam.
 - O YouTube ignora cliques feitos por scripts, então lá nem sempre dá para apertar o botão por você. Uma opção experimental leva os anúncios puláveis direto ao fim, e a extensão avisa quando um skip foi ignorado.
-- Toca os anúncios em velocidade normal e volta à sua velocidade depois.
+- Opcional: toca os anúncios em uma velocidade que você escolhe e volta à sua depois.
 - Opcional: pula abertura e recapitulação em sites de streaming.
 
 **Painel**
@@ -75,15 +77,16 @@ Se a extensão economiza seu tempo, você pode me pagar um café pelo popup. Nad
 Mira los vídeos a la velocidad que prefieras y deja que la extensión salte los anuncios.
 
 **Velocidad**
-- Cualquier vídeo, de 0,1× a 16×, con un indicador sobre el vídeo (posición y tamaño a tu gusto).
+- Cualquier vídeo, de 0,1× a 16×, con un indicador sobre el vídeo (9 posiciones, tamaño, opacidad y, opcionalmente, siempre visible).
 - Cada sitio recuerda su propia velocidad (o usa una sola velocidad en todas partes).
 - Atajos de teclado totalmente configurables: elige la tecla, la acción y el valor. Más rápido, más lento, fijar velocidad, mantener una tecla para acelerar temporalmente, alternar entre dos velocidades, retroceder, avanzar y pausar la extensión en un sitio.
 - Mantiene las voces naturales a altas velocidades.
+- Directos: ve al punto en vivo con un atajo, o deja que la extensión lo alcance automáticamente.
 
 **Saltar anuncios**
 - Pulsa "Saltar anuncio" en cuanto aparece el botón, en los sitios que lo aceptan.
 - YouTube ignora los clics hechos por scripts, así que allí no siempre se puede pulsar el botón por ti. Una opción experimental lleva los anuncios saltables directamente al final, y la extensión avisa cuando un salto fue ignorado.
-- Reproduce los anuncios a velocidad normal y vuelve a tu velocidad después.
+- Opcional: reproduce los anuncios a una velocidad que eliges y vuelve a la tuya después.
 - Opcional: salta intros y resúmenes en sitios de streaming.
 
 **Panel**
@@ -125,6 +128,13 @@ Suggested captions:
 2. **Dashboard:** "See the time you save"
 3. **Shortcuts:** "Your keys, your speeds"
 4. **Speed:** "Each site remembers its speed"
+
+## What's new (0.5.0)
+
+- Always-visible speed badge (with a shortcut), adjustable opacity and 9 positions (middle/center suit vertical videos).
+- Optional ad speed (1.2× by default, off by default). Voices are always kept natural: the pitch option is gone.
+- Live streams: shortcut to jump to the live edge and optional automatic catch-up.
+- Fix: the jump-to-the-end-of-the-ad fallback no longer touches live streams.
 
 ## What's new (0.4.1)
 

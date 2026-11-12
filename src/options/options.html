@@ -94,10 +94,6 @@
           <div><b data-i18n="presets"></b><small data-i18n="presetsDesc"></small></div>
           <input type="text" id="presets" spellcheck="false" autocomplete="off">
         </div>
-        <label class="field">
-          <div><b data-i18n="preservePitch"></b><small data-i18n="preservePitchDesc"></small></div>
-          <input type="checkbox" id="preservePitch" class="switch">
-        </label>
       </div>
 
       <div class="panel">
@@ -106,6 +102,18 @@
           <button id="clearSites" class="link muted" data-i18n="clearAll"></button>
         </div>
         <div id="siteList" class="list"></div>
+      </div>
+
+      <div class="panel">
+        <h3 data-i18n="liveTitle"></h3>
+        <div class="field">
+          <div><b data-i18n="liveCatchUp"></b><small data-i18n="liveCatchUpDesc"></small></div>
+          <div class="valwrap">
+            <input type="number" id="liveSpeed" min="1.05" max="2" step="0.05">
+            <span class="unit">×</span>
+            <input type="checkbox" id="liveCatchUp" class="switch" data-i18n-title="liveCatchUp">
+          </div>
+        </div>
       </div>
     </section>
 
@@ -130,10 +138,14 @@
           <div><b data-i18n="skipIntro"></b><small data-i18n="skipIntroDesc"></small></div>
           <input type="checkbox" id="skipIntro" class="switch">
         </label>
-        <label class="field">
+        <div class="field">
           <div><b data-i18n="adNormal"></b><small data-i18n="adNormalDesc"></small></div>
-          <input type="checkbox" id="adNormalSpeed" class="switch">
-        </label>
+          <div class="valwrap">
+            <input type="number" id="adSpeed" min="0.25" max="16" step="0.05">
+            <span class="unit">×</span>
+            <input type="checkbox" id="adNormalSpeed" class="switch" data-i18n-title="adNormal">
+          </div>
+        </div>
         <label class="field">
           <div><b data-i18n="skipFallback"></b><small data-i18n="skipFallbackDesc"></small></div>
           <input type="checkbox" id="adSkipFallback" class="switch">
@@ -158,11 +170,22 @@
           <input type="checkbox" id="overlay" class="switch">
         </label>
         <div class="field top">
-          <div><b data-i18n="overlayPos"></b><small data-i18n="overlayPosDesc"></small></div>
+          <div>
+            <b data-i18n="overlayPos"></b><small data-i18n="overlayPosDesc"></small>
+            <div class="seg shapes" id="shapeSeg">
+              <button data-shape="h" class="on">16:9</button>
+              <button data-shape="v">9:16</button>
+            </div>
+          </div>
           <div class="screen" id="screen">
             <button data-pos="tl" data-i18n-title="posTl"></button>
+            <button data-pos="tc" data-i18n-title="posTc"></button>
             <button data-pos="tr" data-i18n-title="posTr"></button>
+            <button data-pos="ml" data-i18n-title="posMl"></button>
+            <button data-pos="mc" data-i18n-title="posMc"></button>
+            <button data-pos="mr" data-i18n-title="posMr"></button>
             <button data-pos="bl" data-i18n-title="posBl"></button>
+            <button data-pos="bc" data-i18n-title="posBc"></button>
             <button data-pos="br" data-i18n-title="posBr"></button>
             <span class="badge" id="badge">1.5×</span>
           </div>
@@ -175,6 +198,17 @@
             <button data-size="l" data-i18n="sizeL"></button>
           </div>
         </div>
+        <div class="field">
+          <b data-i18n="overlayOpacity"></b>
+          <div class="valwrap">
+            <input type="range" id="overlayOpacity" min="20" max="100" step="5">
+            <span class="unit" id="opacityVal"></span>
+          </div>
+        </div>
+        <label class="field">
+          <div><b data-i18n="overlayAlways"></b><small data-i18n="overlayAlwaysDesc"></small></div>
+          <input type="checkbox" id="overlayAlways" class="switch">
+        </label>
       </div>
 
       <div class="panel">

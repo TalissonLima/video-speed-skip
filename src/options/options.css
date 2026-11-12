@@ -18,6 +18,7 @@ h3 { margin: 0 0 8px; font-size: 14px; }
 section[hidden] { display: none; }
 section[data-section] { scroll-margin-top: 32px; }
 .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.panel > h3 + .field { border-top: 0; padding-top: 2px; }
 .panel > .field:first-child { padding-top: 2px; }
 .panel > .field:last-child { padding-bottom: 2px; }
 .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -74,7 +75,8 @@ label.field { cursor: pointer; }
 .list-row:first-child { border-top: 0; }
 .list-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .valwrap { display: flex; align-items: center; gap: 6px; }
-.valwrap input { width: 72px; }
+.valwrap input[type=number] { width: 72px; }
+.valwrap input[type=range] { width: 150px; accent-color: var(--accent); }
 .valwrap .unit { color: var(--muted); min-width: 10px; }
 .list .empty { padding: 14px 0; text-align: left; }
 .x { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; flex: none; }
@@ -98,6 +100,13 @@ label.field { cursor: pointer; }
 .screen button:hover { border-color: #fff; }
 .screen [data-pos=tl] { top: 8px; left: 8px; } .screen [data-pos=tr] { top: 8px; right: 8px; }
 .screen [data-pos=bl] { bottom: 8px; left: 8px; } .screen [data-pos=br] { bottom: 8px; right: 8px; }
+.screen [data-pos=tc] { top: 8px; left: 50%; transform: translateX(-50%); }
+.screen [data-pos=bc] { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.screen [data-pos=ml] { top: 50%; left: 8px; transform: translateY(-50%); }
+.screen [data-pos=mr] { top: 50%; right: 8px; transform: translateY(-50%); }
+.screen [data-pos=mc] { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.screen.vertical { width: 135px; aspect-ratio: 9 / 16; }
+.shapes { margin-top: 10px; }
 .screen .badge { position: absolute; pointer-events: none; font-weight: 700; color: #fff; background: rgba(17,17,27,.9); padding: .55em .8em; border-radius: .7em; border: 1px solid rgba(255,255,255,.18); line-height: 1; }
 
 .panel.notice { border-color: #f59e0b; background: color-mix(in srgb, #f59e0b 9%, var(--card)); }

@@ -17,6 +17,17 @@
   window.__clicks = 0;
   window.__events = [];
 
+  // ?live=1  marks the player as a live stream (YouTube adds "ytp-live" to it)
+  // ?two=1   puts the stream's own (paused) <video> before the ad's, like a live player may do
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('live')) player.classList.add('ytp-live');
+  if (qs.get('two')) {
+    const content = document.createElement('video');
+    content.id = 'content'; content.muted = true; content.src = 'silence.wav';
+    player.prepend(content);
+    video.play().catch(() => {}); // the ad is the one playing
+  }
+
   const endAd = () => { player.classList.remove('ad-showing'); skip.hidden = true; };
 
   for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup']) {

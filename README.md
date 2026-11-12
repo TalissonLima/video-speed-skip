@@ -2,10 +2,11 @@
 
 Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencies**).
 
-- **Speed control** — any video, 0.1× to 16×, on-video badge (position and size configurable)
+- **Speed control** — any video, 0.1× to 16×, on-video badge (9 positions, size, opacity, optionally always visible)
 - **Per-site speed** — each website remembers its own speed (or switch to one global speed)
 - **Auto-skip ads** — clicks "Skip Ad" / "Pular anúncio" the moment the button appears (see *Known limitations* for YouTube)
-- **Normal speed during ads** — ads play at 1× and your speed returns afterwards (YouTube ads are detected)
+- **Ad speed** (optional, off by default) — ads play at a speed you choose (1.2× by default) and yours returns afterwards (YouTube ads are detected)
+- **Live streams** — a shortcut jumps to the live edge; optionally it catches up to it automatically by playing slightly faster when you are a few seconds behind
 - **Skip intros & recaps** (optional) — "Skip Intro" / "Skip Recap" on streaming sites
 - **Dashboard** — time saved and ads skipped per day and per site, on a full options page
 - **Simple popup** — pause the extension on a site, change speed, flip the main switches; everything else lives in the options page
@@ -14,7 +15,8 @@ Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencie
 
 Keyboard shortcuts are **fully configurable** in the options page: pick any key (with Ctrl/Alt/Shift if you like),
 an action and its value. Actions: slower, faster, set speed, **hold** (temporary speed while the key is down),
-**toggle** (jump to a speed, press again to go back), ad skip on/off, **pause on this site**, rewind, forward. Defaults:
+**toggle** (jump to a speed, press again to go back), ad skip on/off, **pause on this site**, always-visible badge on/off,
+**jump to live**, rewind, forward. Defaults:
 
 | Key | Action |
 |-----|--------|
@@ -30,6 +32,9 @@ an action and its value. Actions: slower, faster, set speed, **hold** (temporary
   jump to the end of the ad*, currently **on by default while we test it**) jumps **skippable** ads to their end
   instead; it never touches unskippable ads. The only way
   to send a trusted click is Chrome's `debugger` permission, which we deliberately don't use.
+- **Live streams are never fast-forwarded.** The "jump to the end of the ad" fallback is skipped on live streams and only
+  touches a short, playing ad video. Live detection and the live-edge position come from the page's own video data and
+  YouTube's markup; they are tested with plain objects, not yet on a real YouTube live.
 - Keyboard shortcuts don't work when the video is inside an iframe and the focus is on the outer page.
 
 ## Develop
