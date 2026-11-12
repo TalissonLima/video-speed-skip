@@ -93,6 +93,10 @@ default) uses the browser's own sync.
 The `<all_urls>` content script is needed to find videos and ad buttons on any site.
 Details: [PRIVACY.md](PRIVACY.md).
 
+## Support
+
+If it saves you time, you can ☕ [buy me a coffee](https://buymeacoffee.com/talisson). Nothing is locked behind a payment.
+
 ## License
 
 MIT

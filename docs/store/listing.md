@@ -43,7 +43,7 @@ Watch videos at the speed you like, and skip ads with less effort.
 - English, Português and Español. Light and dark theme.
 - Free, MIT licensed: https://github.com/TalissonLima/video-speed-skip
 
-If it saves you time, you can buy me a coffee from the popup. Nothing is locked behind a payment.
+If it saves you time, you can buy me a coffee: https://buymeacoffee.com/talisson. Nothing is locked behind a payment.
 
 ### Português
 
@@ -70,7 +70,7 @@ Assista aos vídeos na velocidade que você gosta e pule anúncios com menos esf
 - Português, English e Español. Tema claro e escuro.
 - Gratuito, licença MIT: https://github.com/TalissonLima/video-speed-skip
 
-Se a extensão economiza seu tempo, você pode me pagar um café pelo popup. Nada fica bloqueado por pagamento.
+Se a extensão economiza seu tempo, você pode me pagar um café: https://buymeacoffee.com/talisson. Nada fica bloqueado por pagamento.
 
 ### Español
 
@@ -97,7 +97,7 @@ Mira los vídeos a la velocidad que prefieras y salta los anuncios con menos esf
 - Español, English y Português. Tema claro y oscuro.
 - Gratis, licencia MIT: https://github.com/TalissonLima/video-speed-skip
 
-Si te ahorra tiempo, puedes invitarme a un café desde el popup. Nada está bloqueado por un pago.
+Si te ahorra tiempo, puedes invitarme a un café: https://buymeacoffee.com/talisson. Nada está bloqueado por un pago.
 
 ## Chrome Web Store — "Privacy practices" tab
 
