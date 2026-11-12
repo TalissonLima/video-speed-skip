@@ -34,9 +34,10 @@
 
   /* ---- saving + feedback ---- */
   let toastTimer;
-  function toast(msg = t("saved")) {
+  function toast(msg = t("saved"), kind = "ok") { // kind: "ok" | "error"
     const box = $("#toast");
-    box.textContent = msg;
+    $("#toastText").textContent = msg;
+    box.dataset.kind = kind;
     box.classList.add("on");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => box.classList.remove("on"), 1400);
@@ -51,6 +52,7 @@
   function ask(textKey, yesKey) {
     return new Promise((resolve) => {
       const dialog = $("#confirm");
+      if (dialog.open) { resolve(false); return; }
       $("#confirmText").textContent = t(textKey);
       $("#confirmYes").textContent = t(yesKey);
       $("#confirmNo").textContent = t("cancel");
@@ -453,6 +455,9 @@
       out[k] = v;
     }
     if (out.speed !== undefined) out.speed = clampSpeed(out.speed);
+    if (out.overlayOpacity !== undefined) out.overlayOpacity = Math.min(1, Math.max(0.2, out.overlayOpacity));
+    if (out.adSpeed !== undefined) out.adSpeed = clampSpeed(out.adSpeed);
+    if (out.liveCatchUpSpeed !== undefined) out.liveCatchUpSpeed = Math.min(2, Math.max(1.05, out.liveCatchUpSpeed));
     if (out.disabledSites) out.disabledSites = out.disabledSites.filter((h) => typeof h === "string");
     if (out.presets) out.presets = out.presets.filter((n) => typeof n === "number" && n >= MIN && n <= MAX).slice(0, 6);
     if (out.siteSpeeds) {
@@ -509,7 +514,7 @@
       else toast();
     } catch {
       box.checked = !want;
-      toast(t("syncFailed"));
+      toast(t("syncFailed"), "error");
     }
   };
 

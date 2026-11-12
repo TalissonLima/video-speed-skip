@@ -1,4 +1,8 @@
 {
-  "extName": { "message": "Video Speed & Skip" },
-  "extDescription": { "message": "Control video playback speed with a clean overlay and keyboard shortcuts, and automatically click \"Skip Ad\" buttons." }
+  "extName": {
+    "message": "Video Speed & Skip"
+  },
+  "extDescription": {
+    "message": "Control video speed with custom shortcuts and a clean badge. Skips ads where allowed and shows the time you save."
+  }
 }

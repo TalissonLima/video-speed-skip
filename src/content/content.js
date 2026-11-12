@@ -60,7 +60,7 @@
 
   // A live stream: infinite duration, or YouTube's live markers. Never fast-forward those.
   function isLive(v) {
-    if (v && !Number.isFinite(v.duration)) return true;
+    if (v && v.duration === Infinity) return true; // (NaN just means the metadata isn't loaded yet)
     if (document.querySelector(".html5-video-player.ytp-live")) return true;
     const badge = document.querySelector(".ytp-live-badge");
     return !!(badge && visible(badge));
@@ -85,6 +85,9 @@
     const now = Date.now();
     if (!force && now - lastShadowScan < 1500) return;
     lastShadowScan = now;
+    for (let i = roots.length - 1; i >= 0; i--) {
+      if (!roots[i].host.isConnected) { seenRoots.delete(roots[i]); roots.splice(i, 1); }
+    }
     const visit = (scope) => {
       for (const el of scope.querySelectorAll("*")) {
         const sr = el.shadowRoot;
@@ -352,7 +355,7 @@
   /* ------------------------------------------------------------------ *
    * Skip buttons
    * ------------------------------------------------------------------ */
-  // Known player buttons (YouTube and friends). Safe to click when visible.
+  // Known player buttons (YouTube and friends). These are only highlighted, never clicked (see assistSkip).
   const AD_SELECTORS = [
     ".ytp-skip-ad-button",
     ".ytp-ad-skip-button",
@@ -436,7 +439,9 @@
   function assistSkip(btn) {
     if (hintedBtn === btn) return; // once per appearance of the button
     hintedBtn = btn;
-    try { btn.focus({ preventScroll: true }); } catch { /* ignore */ }
+    if (!typing(document.activeElement)) { // (never steal the focus from someone typing)
+      try { btn.focus({ preventScroll: true }); } catch { /* ignore */ }
+    }
     flash("⏭ ⏎");
   }
 
@@ -464,8 +469,10 @@
     if (cfg.autoSkip) {
       const known = findBySelector(AD_SELECTORS); // YouTube & co: never clicked, only highlighted
       if (known) assistSkip(known);
-      const generic = findByText(AD_TEXT);        // other sites: a verified click
-      if (generic) skipAd(generic);
+      if (!document.querySelector(".html5-video-player")) { // (no need to walk every button on a YouTube page)
+        const generic = findByText(AD_TEXT);               // other sites: a verified click
+        if (generic) skipAd(generic);
+      }
     }
     if (cfg.skipIntro) {
       const btn = find(INTRO_SELECTORS, INTRO_TEXT);
@@ -581,9 +588,9 @@
   /* ------------------------------------------------------------------ *
    * Lazy start: do nothing heavy until the page has a video
    * ------------------------------------------------------------------ */
-  function hasVideo() {
+  function hasVideo(force = false) {
     if (document.querySelector("video")) return true;
-    scanShadows(true);
+    scanShadows(force);
     return roots.some((r) => r.host.isConnected && r.querySelector("video"));
   }
 
@@ -597,6 +604,11 @@
     }, 500);
   });
 
+  // setInterval that stops by itself once the extension was updated/reloaded (api.runtime.id disappears)
+  function every(fn, ms) {
+    const id = setInterval(() => { if (!api.runtime?.id) clearInterval(id); else fn(); }, ms);
+  }
+
   function activate() {
     if (active) return;
     active = true;
@@ -604,10 +616,10 @@
     new MutationObserver(scheduleScan).observe(document.documentElement, {
       subtree: true, childList: true, attributes: true, attributeFilter: ["class", "style", "hidden"]
     });
-    setInterval(scan, 1000);       // safety net for changes the observer can't see
-    setInterval(tickStats, 1000);
-    setInterval(liveTick, 1000);
-    setInterval(refreshBadge, 400); // only does work while "always visible" is on
+    every(scan, 1000);       // safety net for changes the observer can't see
+    every(tickStats, 1000);
+    every(liveTick, 1000);
+    every(refreshBadge, 400); // only does work while "always visible" is on
     applyAll();
     scan();
   }
@@ -625,7 +637,7 @@
   VSS.load().then((loaded) => {
     cfg = loaded;
     if (active) applyAll();           // a video fired events before the settings were loaded
-    else if (hasVideo()) activate();
+    else if (hasVideo(true)) activate();
     else armObserver.observe(document.documentElement, { subtree: true, childList: true });
   });
 })();

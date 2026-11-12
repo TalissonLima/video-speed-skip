@@ -1,4 +1,8 @@
 {
-  "extName": { "message": "Video Speed & Skip" },
-  "extDescription": { "message": "Controle a velocidade dos vídeos com overlay limpo e atalhos de teclado, e pule anúncios automaticamente quando o botão \"Pular anúncio\" aparecer." }
+  "extName": {
+    "message": "Video Speed & Skip"
+  },
+  "extDescription": {
+    "message": "Controle a velocidade dos vídeos com atalhos configuráveis. Pula anúncios onde é permitido e mostra o tempo que você economiza."
+  }
 }

@@ -1,4 +1,8 @@
 {
-  "extName": { "message": "Video Speed & Skip" },
-  "extDescription": { "message": "Controla la velocidad de los vídeos con un indicador limpio y atajos de teclado, y salta los anuncios automáticamente cuando aparece el botón \"Saltar anuncio\"." }
+  "extName": {
+    "message": "Video Speed & Skip"
+  },
+  "extDescription": {
+    "message": "Controla la velocidad de los vídeos con atajos personalizables. Salta anuncios donde se permite y muestra el tiempo que ahorras."
+  }
 }

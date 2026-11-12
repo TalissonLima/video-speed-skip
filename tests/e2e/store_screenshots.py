@@ -18,9 +18,9 @@ from ff import EXT, ROOT, SITE, Firefox, prepare_extension, start_static_server 
 OUT = ROOT / "docs" / "store" / "screenshots"
 
 COPY = {
-    "en": ("Faster videos. No ads.", "Set your speed once and skip the ads automatically. Private and open source."),
-    "pt": ("Vídeos mais rápidos. Sem anúncios.", "Defina sua velocidade e pule os anúncios automaticamente. Privado e de código aberto."),
-    "es": ("Vídeos más rápidos. Sin anuncios.", "Elige tu velocidad y salta los anuncios automáticamente. Privado y de código abierto."),
+    "en": ("Watch faster. Skip sooner.", "Set your speed once, skip ads with one key and see the time you save. Private and open source."),
+    "pt": ("Assista mais rápido. Pule mais cedo.", "Defina sua velocidade uma vez, pule anúncios com uma tecla e veja o tempo que você economiza. Privado e de código aberto."),
+    "es": ("Mira más rápido. Salta antes.", "Elige tu velocidad una vez, salta anuncios con una tecla y mira el tiempo que ahorras. Privado y de código abierto."),
 }
 
 SAMPLE = """
@@ -44,6 +44,7 @@ await new Promise(r => setTimeout(r, 600));
 const q = (s) => document.querySelector(s); const T = (key) => VSS_I18N['__LANG__'][key];
 q('#siteHost').textContent = 'www.youtube.com'; q('#siteState').textContent = T('siteActive');
 q('#dot').className = 'dot on'; q('#siteOn').checked = true; q('#siteOn').disabled = false;
+if ('__LANG__' !== 'pt') q('#pix').hidden = true;   // the PIX button is only offered to users in Brazil
 q('#speedLabel').textContent = T('speedFor'); q('#speedCard').classList.remove('off');
 q('#value').textContent = '1.50×'; q('#slider').value = 1.5;
 document.querySelectorAll('#chips button').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === 1.5));
@@ -91,6 +92,16 @@ def main():
                 ff.frame(None)
                 ff.shot(folder / f"0{number}-{section}.png")
             print(f"{lang}: 4 screenshots -> {folder.relative_to(ROOT)}")
+
+        # promo tiles (Chrome Web Store: the small one is recommended, the marquee optional; neither can be localized)
+        promo = OUT.parent / "promo"
+        promo.mkdir(parents=True, exist_ok=True)
+        for name, (w, h) in {"small-440x280": (440, 280), "marquee-1400x560": (1400, 560)}.items():
+            ff.go(f"{SITE}/store-promo.html")
+            set_viewport(ff, w, h)
+            time.sleep(0.8)
+            ff.shot(promo / f"{name}.png")
+        print(f"promo tiles -> {promo.relative_to(ROOT)}")
     finally:
         ff.quit()
         server.shutdown()

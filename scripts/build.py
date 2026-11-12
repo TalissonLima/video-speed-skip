@@ -25,11 +25,13 @@ for target in ("chrome", "firefox"):
             if f.suffix in STRIPPERS:
                 f.write_text(STRIPPERS[f.suffix](f.read_text()))
     m = json.loads(json.dumps(manifest))
+    if target == "chrome":
+        m["minimum_chrome_version"] = "111"  # color-mix() in the UI
     if target == "firefox":
         m["browser_specific_settings"] = {
             "gecko": {
                 "id": "video-speed-skip@talissonlima.github.io",
-                "strict_min_version": "115.0",
+                "strict_min_version": "142.0",  # data_collection_permissions needs 140 (desktop) / 142 (Android)
                 "data_collection_permissions": {"required": ["none"]},
             }
         }

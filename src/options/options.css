@@ -112,8 +112,14 @@ input:disabled { opacity: .5; }
 
 textarea { width: 100%; height: auto; padding: 8px; font: 12px/1.4 ui-monospace, monospace; resize: vertical; margin: 4px 0 10px; }
 .support p { margin: 2px 0 12px; }
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 10px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 16px); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 32px);
+         background: var(--text); color: var(--bg); padding: 10px 18px 10px 12px; border-radius: 999px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.28);
+         opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
+.toast-ico { flex: none; width: 20px; height: 20px; border-radius: 50%; background: #22c55e; display: grid; place-items: center; }
+.toast-ico::before { content: "✓"; color: #fff; font-size: 12px; font-weight: 800; line-height: 1; }
+.toast[data-kind=error] .toast-ico { background: #ef4444; }
+.toast[data-kind=error] .toast-ico::before { content: "!"; }
 
 /* narrow screens: sidebar becomes a top bar */
 @media (max-width: 800px) {

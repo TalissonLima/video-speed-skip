@@ -1,7 +1,7 @@
 // All UI strings. {placeholders} are filled by VSS.ui.makeT().
 globalThis.VSS_I18N = {
   en: {
-    tagline: "Speed up videos. Skip the ads.",
+    tagline: "Watch faster. Skip sooner.",
     openSettings: "Settings & dashboard",
     viewDashboard: "View dashboard",
     tipLabel: "Shortcuts",
@@ -19,7 +19,7 @@ globalThis.VSS_I18N = {
     skipIntro: "Skip intros & recaps",
     skipIntroDesc: "On streaming sites, clicks “Skip Intro”",
     adNormal: "Speed during ads",
-    adNormalDesc: "Plays ads at this speed and returns to yours afterwards.",
+    adNormalDesc: "Plays ads at this speed and returns to yours afterwards. Try it if a site starts treating you like an ad blocker.",
     supportTitle: "Enjoying it?",
     supportText: "It’s free and open source. A coffee helps keep it going.",
     buyCoffee: "Buy me a coffee",
@@ -144,13 +144,12 @@ globalThis.VSS_I18N = {
     invalidSettings: "Invalid settings",
     dangerZone: "Reset",
     resetAll: "Reset all settings",
-    about: "About",
     version: "Version {v}",
-    saved: "Saved ✓"
+    saved: "Saved"
   },
 
   pt: {
-    tagline: "Acelere vídeos. Pule os anúncios.",
+    tagline: "Assista mais rápido. Pule mais cedo.",
     openSettings: "Configurações e painel",
     viewDashboard: "Ver painel",
     tipLabel: "Atalhos",
@@ -168,7 +167,7 @@ globalThis.VSS_I18N = {
     skipIntro: "Pular abertura e recapitulação",
     skipIntroDesc: "Em streaming, clica em “Pular abertura”",
     adNormal: "Velocidade nos anúncios",
-    adNormalDesc: "Toca os anúncios nesta velocidade e volta à sua depois.",
+    adNormalDesc: "Toca os anúncios nesta velocidade e volta à sua depois. Experimente ativar se o site começar a tratar você como bloqueador de anúncios.",
     supportTitle: "Gostou?",
     supportText: "É gratuito e open source. Um cafezinho ajuda a manter o projeto.",
     buyCoffee: "Me pague um café",
@@ -293,13 +292,12 @@ globalThis.VSS_I18N = {
     invalidSettings: "Configurações inválidas",
     dangerZone: "Redefinir",
     resetAll: "Redefinir todas as configurações",
-    about: "Sobre",
     version: "Versão {v}",
-    saved: "Salvo ✓"
+    saved: "Salvo"
   },
 
   es: {
-    tagline: "Acelera vídeos. Salta los anuncios.",
+    tagline: "Mira más rápido. Salta antes.",
     openSettings: "Ajustes y panel",
     viewDashboard: "Ver panel",
     tipLabel: "Atajos",
@@ -317,7 +315,7 @@ globalThis.VSS_I18N = {
     skipIntro: "Saltar intros y resúmenes",
     skipIntroDesc: "En streaming, pulsa “Saltar intro”",
     adNormal: "Velocidad en anuncios",
-    adNormalDesc: "Reproduce los anuncios a esta velocidad y vuelve a la tuya después.",
+    adNormalDesc: "Reproduce los anuncios a esta velocidad y vuelve a la tuya después. Actívalo si un sitio empieza a tratarte como un bloqueador de anuncios.",
     supportTitle: "¿Te gusta?",
     supportText: "Es gratis y de código abierto. Un café ayuda a mantenerlo.",
     buyCoffee: "Invítame a un café",
@@ -442,8 +440,7 @@ globalThis.VSS_I18N = {
     invalidSettings: "Ajustes no válidos",
     dangerZone: "Restablecer",
     resetAll: "Restablecer todos los ajustes",
-    about: "Acerca de",
     version: "Versión {v}",
-    saved: "Guardado ✓"
+    saved: "Guardado"
   }
 };
