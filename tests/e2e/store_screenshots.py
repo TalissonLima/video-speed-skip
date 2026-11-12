@@ -34,8 +34,7 @@ await browser.storage.local.set({
   siteSpeeds: { 'www.youtube.com': 1.5, 'vimeo.com': 1.25, 'coursera.org': 2, 'twitch.tv': 1.1 },
   skipCount: 128, savedSeconds: 19800,
   stats: { daily, sites: { 'www.youtube.com': { s: 12000, a: 90 }, 'coursera.org': { s: 5400, a: 0 }, 'vimeo.com': { s: 1800, a: 12 }, 'twitch.tv': { s: 600, a: 26 } } },
-  shortcuts: [k('slower', 0.1, 'KeyS', 'S'), k('faster', 0.1, 'KeyD', 'D'), k('setSpeed', 1, 'KeyR', 'R'),
-              k('hold', 3, 'KeyH', 'H'), k('rewind', 10, 'KeyZ', 'Z'), k('forward', 10, 'KeyX', 'X')]
+  // the shortcuts are left out on purpose: the screenshots show the real defaults
 });
 return true;
 """

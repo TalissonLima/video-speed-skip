@@ -38,10 +38,25 @@
   const near = (a, b) => Math.abs(a - b) < 1e-6;
   const fmt = (n) => n.toFixed(2).replace(/\.?0+$/, "") + "×";
   const area = (v) => { const r = v.getBoundingClientRect(); return r.width * r.height; };
+  const onScreen = (v) => {
+    const r = v.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+  };
 
   // YouTube marks its player while an ad is playing.
   const AD_PLAYING = ".html5-video-player.ad-showing, .html5-video-player.ad-interrupting";
   const adPlaying = () => !!document.querySelector(AD_PLAYING);
+
+  // Call whenever the page may have switched between content and ad. Moves the videos to the right
+  // speed at once (back to the user's own speed when the ad ends) and opens the short window in which
+  // the site's own rate resets are ignored instead of being learned as the user's choice.
+  function syncAd() {
+    const ad = adPlaying();
+    if (ad === lastAd) return;
+    lastAd = ad;
+    adChangedAt = Date.now();
+    applyAll();
+  }
 
   // A live stream: infinite duration, or YouTube's live markers. Never fast-forward those.
   function isLive(v) {
@@ -106,7 +121,7 @@
   function buildOverlay() {
     overlayHost = document.createElement("div");
     overlayHost.style.cssText = "all:initial;position:fixed;z-index:2147483647;pointer-events:none;";
-    const root = overlayHost.attachShadow({ mode: "closed" });
+    const root = overlayHost.attachShadow({ mode: "open" }); // open: it only shows the speed, and tests can read it
     root.innerHTML = `
       <style>
         .b{font:600 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;
@@ -170,9 +185,9 @@
     }
     alwaysShown = true;
     const v = pickVideo();
-    const r = v?.getBoundingClientRect();
-    const onScreen = r && r.width > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
-    if (!(onScreen && placeBadge(fmt(speedNow())))) badge?.classList.remove("on");
+    // a message (e.g. "+30s" from the seek keys) stays for its time; only then the speed comes back
+    const text = Date.now() < flashUntil ? badge.textContent : fmt(speedNow());
+    if (!(v && onScreen(v) && placeBadge(text))) badge?.classList.remove("on");
   }
 
   /* ------------------------------------------------------------------ *
@@ -211,6 +226,7 @@
   function onLoad(e) {
     if (!isVideo(e)) return;
     if (!active) activate();
+    syncAd();
     e.target.__vssLoadedAt = Date.now();
     applySpeed(e.target);
   }
@@ -218,6 +234,7 @@
   function onPlay(e) {
     if (!isVideo(e)) return;
     if (!active) activate();
+    syncAd();
     activeVideo = e.target;
     applySpeed(e.target);
   }
@@ -225,6 +242,7 @@
   function onRate(e) {
     const v = e.target;
     if (!(v instanceof HTMLVideoElement)) return;
+    syncAd(); // the site may reset the rate in the same breath as the ad ending: notice that first
     if (v.__vssSetting) { v.__vssSetting = false; return; }
     if (!enabled() || tempSpeed !== null || near(v.playbackRate, speedNow())) return;
     // Never learn a speed from the ad player or right after an ad starts/ends, and undo
@@ -292,7 +310,7 @@
     }
     if (!enabled()) return;
     const v = pickVideo();
-    if (!v) return;
+    if (!v || (v.paused && !onScreen(v))) return; // not ours to control: leave the page's own keys alone
     const n = Number(sc.value);
     switch (sc.action) {
       case "slower": setSpeed(speedNow() - (n || 0.1)); break;
@@ -439,13 +457,7 @@
     if (!active) return;
     scanShadows();
 
-    // When an ad starts or ends, move videos to the right speed straight away.
-    const ad = adPlaying();
-    if (ad !== lastAd) {
-      lastAd = ad;
-      adChangedAt = Date.now();
-      applyAll();
-    }
+    syncAd();
 
     if (!enabled()) return;
     if (hintedBtn && (!hintedBtn.isConnected || !visible(hintedBtn))) hintedBtn = null;
@@ -546,7 +558,11 @@
     const edge = liveEdge(v);
     if (!isLive(v) || !Number.isFinite(edge)) return;
     v.currentTime = Math.max(0, edge - 0.5);
-    flash("● LIVE");
+    // At the live edge there is nothing ahead to speed through: back to 1x (this also ends a catch-up).
+    tempSpeed = null; held = null; liveBoost = null;
+    persist(1);
+    applyAll();
+    flash("● LIVE · 1×");
   }
 
   // The thresholds live in shared/live.js. A stream watched far behind on purpose is left alone, and

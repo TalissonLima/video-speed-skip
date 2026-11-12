@@ -2,7 +2,7 @@
 
 _Last updated: 2026-11-11 · Política de privacidade em português logo abaixo._
 
-**Short version: Video Speed & Skip does not collect, transmit, sell or share any data. Everything stays on your device.**
+**Short version: Video Speed & Skip does not collect, transmit, sell or share any data. Everything stays on your device.** The only exception is the optional settings sync below, which your browser performs itself.
 
 ## What the extension stores (locally only)
 
@@ -14,6 +14,10 @@ Everything below is saved in your browser's local extension storage (`storage.lo
 - usage statistics shown in the dashboard: time saved and ads skipped, per day and per website hostname.
 
 You can erase the statistics or the saved speeds at any time from the options page, or remove everything by uninstalling the extension.
+
+## Optional settings sync
+
+Off by default. If you turn on *Sync across devices*, your **settings** (shortcuts, speeds, badge options, language, paused sites; never statistics) are also written to the browser's own sync storage (`storage.sync`), so Chrome Sync or Firefox Sync can carry them to your other devices. That transfer is done by your browser and its vendor under their own privacy policy; the extension has no server and sends nothing to its author. You can turn it off at any time on the options page.
 
 ## What the extension does **not** do
 
@@ -45,7 +49,7 @@ If this policy changes, the new version will be published in this file with a ne
 
 # Política de Privacidade — Video Speed & Skip
 
-**Resumo: o Video Speed & Skip não coleta, não transmite, não vende e não compartilha nenhum dado. Tudo fica no seu dispositivo.**
+**Resumo: o Video Speed & Skip não coleta, não transmite, não vende e não compartilha nenhum dado. Tudo fica no seu dispositivo.** A única exceção é a sincronização opcional de configurações, abaixo, que o próprio navegador executa.
 
 ## O que a extensão guarda (somente localmente)
 
@@ -57,6 +61,10 @@ Tudo abaixo fica no armazenamento local da extensão no seu navegador e nunca sa
 - as estatísticas do painel: tempo economizado e anúncios pulados, por dia e por site.
 
 Você pode apagar as estatísticas ou as velocidades salvas a qualquer momento na página de opções, ou remover tudo desinstalando a extensão.
+
+## Sincronização opcional de configurações
+
+Desligada por padrão. Se você ativar *Sincronizar entre dispositivos*, suas **configurações** (atalhos, velocidades, opções do indicador, idioma, sites pausados; nunca as estatísticas) também são gravadas no armazenamento de sincronização do próprio navegador (`storage.sync`), para que o Chrome Sync ou o Firefox Sync as levem aos seus outros dispositivos. Essa transferência é feita pelo navegador e por quem o fabrica, sob a política de privacidade deles; a extensão não tem servidor e não envia nada ao autor. Você pode desligar quando quiser na página de opções.
 
 ## O que a extensão **não** faz
 

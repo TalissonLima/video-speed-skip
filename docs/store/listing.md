@@ -39,7 +39,7 @@ Watch videos at the speed you like, and skip the ads for you.
 - See how much time you saved and how many ads were skipped, per day and per website.
 
 **Private and open source**
-- No accounts, no tracking, no ads. Everything stays on your device.
+- No accounts, no tracking, no ads. Everything stays on your device (optional settings sync uses your browser's own sync).
 - English, Português and Español. Light and dark theme.
 - Free, MIT licensed: https://github.com/TalissonLima/video-speed-skip
 
@@ -66,7 +66,7 @@ Assista aos vídeos na velocidade que você gosta, e deixe que a extensão pule 
 - Veja quanto tempo você economizou e quantos anúncios foram pulados, por dia e por site.
 
 **Privado e de código aberto**
-- Sem conta, sem rastreamento, sem anúncios. Tudo fica no seu dispositivo.
+- Sem conta, sem rastreamento, sem anúncios. Tudo fica no seu dispositivo (a sincronização opcional de configurações usa a do próprio navegador).
 - Português, English e Español. Tema claro e escuro.
 - Gratuito, licença MIT: https://github.com/TalissonLima/video-speed-skip
 
@@ -93,7 +93,7 @@ Mira los vídeos a la velocidad que prefieras y deja que la extensión salte los
 - Mira cuánto tiempo has ahorrado y cuántos anuncios se saltaron, por día y por sitio.
 
 **Privado y de código abierto**
-- Sin cuenta, sin rastreo, sin anuncios. Todo se queda en tu dispositivo.
+- Sin cuenta, sin rastreo, sin anuncios. Todo se queda en tu dispositivo (la sincronización opcional de ajustes usa la del propio navegador).
 - Español, English y Português. Tema claro y oscuro.
 - Gratis, licencia MIT: https://github.com/TalissonLima/video-speed-skip
 
@@ -107,7 +107,7 @@ Si te ahorra tiempo, puedes invitarme a un café desde el popup. Nada está bloq
   - `activeTab`: when the popup opens, reads the hostname of the current tab to show and save that site's speed and to offer the pause switch.
   - **Host access (content script on all URLs):** the extension must find `<video>` elements and skip buttons on any website the user watches video on, and apply the chosen speed. It reads nothing else and sends nothing anywhere.
 - **Remote code:** No. All code is packaged in the extension.
-- **Data usage:** the extension does not collect or transmit any user data. Settings and statistics are stored locally only. Do not tick any of the data-collection categories.
+- **Data usage:** the extension does not collect or transmit any user data to the developer. Settings and statistics are stored locally. The optional, off-by-default settings sync (`storage.sync`, settings only, never statistics) is carried by the browser's own sync. Do not tick any of the data-collection categories.
 - Certify the three statements: no selling data, no unrelated use, no creditworthiness use.
 
 ## Firefox Add-ons notes
@@ -128,6 +128,15 @@ Suggested captions:
 2. **Dashboard:** "See the time you save"
 3. **Shortcuts:** "Your keys, your speeds"
 4. **Speed:** "Each site remembers its speed"
+
+## What's new (0.7.0)
+
+- New default keys that avoid the ones YouTube, Netflix, Twitch, Crunchyroll and TikTok use; hold for 3×, toggle speed, badge on/off, ±30 s and ±60 s.
+- Ads: your speed always returns when the ad ends, even if the site resets it at that moment.
+- The always-visible badge no longer erases the summed seek (+30s). Default opacity is 75%.
+- "Jump to live" also goes back to 1×.
+- Optional settings sync across devices (off by default; settings only).
+- Shortcuts page grouped by kind, with the add/restore buttons on top; dependent options are dimmed when their switch is off.
 
 ## What's new (0.6.0)
 

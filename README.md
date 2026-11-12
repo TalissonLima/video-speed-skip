@@ -11,6 +11,7 @@ Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencie
 - **Dashboard** — time saved and ads skipped per day and per site, on a full options page
 - **Simple popup** — pause the extension on a site, change speed, flip the main switches; everything else lives in the options page
 - **EN / PT / ES** interface, light/dark theme, per-site pause, settings backup (copy / paste / file)
+- **Settings sync** (opt-in, off by default) — your settings follow you through the browser's own sync (Chrome Sync / Firefox Sync); statistics never sync
 - **Light on the browser** — idle until a page actually has a video; also finds videos inside shadow-DOM players
 
 Keyboard shortcuts are **fully configurable** in the options page: pick any key (with Ctrl/Alt/Shift if you like),
@@ -20,9 +21,19 @@ an action and its value. Actions: slower, faster, set speed, **hold** (temporary
 
 | Key | Action |
 |-----|--------|
-| `S` / `D` | slower / faster (±0.1×) |
+| `A` / `D` | slower / faster (±0.1×) |
 | `R` | reset to 1× |
+| `H` (hold) | 3× while the key is held down |
+| `G` | toggle between your speed and 2× |
+| `V` | always-visible badge on/off |
 | `Z` / `X` | back / forward 10 s |
+| `Shift+Z` / `Shift+X` | back / forward 30 s |
+| `Q` / `E` | back / forward 60 s |
+
+The defaults avoid the keys the big players use: YouTube (K J L M F T I C, arrows, 0–9, `,` `.` `<` `>`), Netflix (S, Space,
+Enter, F, M), Twitch (K, M, F, Alt+T, Alt+R), Crunchyroll (J L K M C F) and TikTok (L, M, ↑ ↓). The test suite checks this list.
+Letters only, because punctuation moves around between keyboard layouts. Quick presses of the seek keys add up on the badge
+(3 × 10 s shows +30s). Installs still on the original defaults (S D R Z X) are moved to the new ones; custom lists are never touched.
 
 ## Known limitations
 
@@ -77,7 +88,8 @@ The end-to-end test needs Firefox and `geckodriver` already installed (the Firef
 
 ## Privacy
 
-Everything stays on your device (`storage.local`). No analytics, no network requests.
+Everything stays on your device (`storage.local`). No analytics, no network requests. The optional settings sync (off by
+default) uses the browser's own sync.
 The `<all_urls>` content script is needed to find videos and ad buttons on any site.
 Details: [PRIVACY.md](PRIVACY.md).
 

@@ -122,10 +122,19 @@ def main():
           document.body.append(player);
           player.classList.add('ad-showing'); await sleep(1600); const during = v.playbackRate;
           player.classList.remove('ad-showing'); await sleep(1600);
-          return {base, during, after: v.playbackRate};
+          const after = v.playbackRate;
+          player.classList.add('ad-showing'); await sleep(1600);
+          player.classList.remove('ad-showing'); v.playbackRate = 1.5;   // the site leaves the ad speed behind, same tick
+          await sleep(1800);
+          return {base, during, after, raced: v.playbackRate};
         """)
         check("ad speed on: ads play at the chosen speed", approx(r["during"], 1.5), r)
         check("...and your speed returns afterwards", approx(r["after"], r["base"]), r)
+        check("a site that resets the rate as the ad ends does not change your speed", approx(r["raced"], r["base"]), r)
+        kept = stored(ff, "['siteSpeeds']")
+        check("...and your saved speed is untouched", approx((kept.get("siteSpeeds") or {}).get("localhost"), r["base"]), kept)
+        ff.go(f"{SITE}/real-extension.html")   # (reading storage navigated away)
+        time.sleep(1.5)
 
         # ------------------------------------------------------------------ skip buttons
         print("Content script: skip buttons")
@@ -275,11 +284,89 @@ def main():
           const host = [...document.documentElement.children].find((e) => e.style && e.style.zIndex === '2147483647');
           if (!host) return {found: false};
           const b = v.getBoundingClientRect();
-          return {found: true, left: parseFloat(host.style.left), top: parseFloat(host.style.top),
-                  cx: b.left + b.width / 2, cy: b.top + b.height / 2, transform: host.style.transform};
+          const out = {found: true, left: parseFloat(host.style.left), top: parseFloat(host.style.top),
+                       cx: b.left + b.width / 2, cy: b.top + b.height / 2, transform: host.style.transform};
+          const text = () => host.shadowRoot.querySelector('.b').textContent;
+          out.speedText = text();
+          kd('KeyX'); kd('KeyX'); kd('KeyX'); await sleep(700);          // longer than one refresh tick (400 ms)
+          out.seekText = text();
+          await sleep(1800);
+          out.backText = text();
+          return out;
         """)
         check("always-visible badge sits on the video, centered",
               r.get("found") and abs(r["left"] - r["cx"]) < 3 and abs(r["top"] - r["cy"]) < 3 and "-50%" in r["transform"], r)
+        check("always-visible badge shows the speed", r.get("speedText") == "1×", r.get("speedText"))
+        check("...and keeps the summed seek (3 x 10 s = +30s) instead of overwriting it", r.get("seekText") == "+30s", r.get("seekText"))
+        check("...then shows the speed again", r.get("backText") == "1×", r.get("backText"))
+
+        # ------------------------------------------------------------------ default keys vs. the big players
+        print("Default shortcuts")
+        ff.go(f"{SITE}/live-logic.html")
+        r = ff.run("""
+          const reserved = {"plain": ["KeyK", "KeyJ", "KeyL", "KeyM", "KeyF", "KeyT", "KeyI", "KeyC", "KeyS", "Space", "Enter", "Escape", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Comma", "Period", "Home", "End", "PageUp", "PageDown", "Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"], "shift": ["KeyN", "KeyP", "Comma", "Period", "Slash"], "alt": ["KeyT", "KeyR", "KeyK", "KeyX"]};
+          const clashes = [], seen = new Set();
+          for (const sc of VSS.DEFAULT_SHORTCUTS) {
+            const kind = sc.ctrl ? 'ctrl' : sc.alt ? 'alt' : sc.shift ? 'shift' : 'plain';
+            if ((reserved[kind] || []).includes(sc.code) || sc.ctrl) clashes.push(kind + '+' + sc.code);
+            const id = [sc.code, sc.ctrl, sc.alt, sc.shift].join('|');
+            if (seen.has(id)) clashes.push('duplicate ' + id);
+            seen.add(id);
+          }
+          const has = (action, value, code, shift = false) => VSS.DEFAULT_SHORTCUTS.some(
+            (s) => s.action === action && s.value === value && s.code === code && s.shift === shift);
+          return {clashes, count: VSS.DEFAULT_SHORTCUTS.length,
+                  hold3: has('hold', 3, 'KeyH'), toggle: VSS.DEFAULT_SHORTCUTS.some((s) => s.action === 'toggle'),
+                  badge: VSS.DEFAULT_SHORTCUTS.some((s) => s.action === 'toggleAlways'),
+                  seeks: [has('rewind', 30, 'KeyZ', true), has('forward', 30, 'KeyX', true), has('rewind', 60, 'KeyQ'), has('forward', 60, 'KeyE')]};
+        """)
+        check("default keys don't collide with YouTube, Netflix, Twitch, Crunchyroll or TikTok", not r["clashes"], r["clashes"])
+        check("defaults: hold 3x, toggle, always-visible badge", r["hold3"] and r["toggle"] and r["badge"], r)
+        check("defaults: +-30 s and +-60 s", all(r["seeks"]), r["seeks"])
+
+        r = ff.ext_run("""
+          const k = (action, value, code) => ({action, value, code, label: '', ctrl: false, alt: false, shift: false});
+          await browser.storage.local.set({shortcuts: [k('slower', 0.1, 'KeyS'), k('faster', 0.1, 'KeyD'), k('setSpeed', 1, 'KeyR'),
+                                                       k('rewind', 10, 'KeyZ'), k('forward', 10, 'KeyX')]});
+          const migrated = (await VSS.load()).shortcuts.length;                 // the original five defaults
+          await browser.storage.local.set({shortcuts: [k('slower', 0.1, 'KeyS')]});
+          const custom = (await VSS.load()).shortcuts.length;                   // a list the user made
+          return {migrated, custom};
+        """)
+        check("an install still on the old defaults moves to the new ones", r["migrated"] == 12, r)
+        check("a shortcut list made by the user is never touched", r["custom"] == 1, r)
+
+        print("Settings sync")
+        r = ff.ext_run("""
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+          await browser.storage.local.clear(); await browser.storage.sync.clear();
+          await browser.storage.local.set({presets: [1, 2, 4], overlayOpacity: 0.4});
+          const mode = await VSS.setSync(true);                                  // nothing there yet: this device uploads
+          const first = await browser.storage.sync.get(['presets', 'overlayOpacity']);
+          await VSS.save({overlayOpacity: 0.3}); await sleep(1500);              // pushes are debounced
+          const second = await browser.storage.sync.get('overlayOpacity');
+          await browser.storage.sync.set({presets: [1, 3]}); await sleep(600);   // "another device" changes a setting
+          const pulled = await browser.storage.local.get('presets');
+          const noStats = await browser.storage.sync.get(['stats', 'skipCount', 'savedSeconds']);
+          await VSS.setSync(false);
+          await browser.storage.sync.set({presets: [9]}); await sleep(600);
+          const afterOff = await browser.storage.local.get('presets');           // no longer followed
+          await browser.storage.sync.clear();
+          // enabling on a device when another one already saved settings loads them
+          await browser.storage.sync.set({presets: [5]}); await browser.storage.local.set({presets: [1]});
+          const mode2 = await VSS.setSync(true);
+          const loaded = await browser.storage.local.get('presets');
+          await VSS.setSync(false); await browser.storage.sync.clear();
+          return {mode, first, second, pulled, noStats, afterOff, mode2, loaded};
+        """)
+        check("sync on: this device's settings are uploaded when nothing was saved yet",
+              r["mode"] == "pushed" and r["first"].get("presets") == [1, 2, 4], r)
+        check("sync on: later changes are pushed", r["second"].get("overlayOpacity") == 0.3, r)
+        check("sync on: a change from another device arrives", r["pulled"].get("presets") == [1, 3], r)
+        check("sync never carries statistics", not r["noStats"], r["noStats"])
+        check("sync off: remote changes are no longer followed", r["afterOff"].get("presets") == [1, 3], r)
+        check("sync on with settings already saved elsewhere: they are loaded here",
+              r["mode2"] == "pulled" and r["loaded"].get("presets") == [5], r)
 
         # ------------------------------------------------------------------ options page
         print("Options page")
@@ -301,6 +388,10 @@ def main():
           out.newControls = ['adSpeed', 'overlayOpacity', 'overlayAlways', 'liveCatchUp', 'liveSpeed'].every((id) => document.getElementById(id));
           out.noPitchOption = !document.getElementById('preservePitch');
           out.positions = document.querySelectorAll('#screen [data-pos]').length;
+          out.syncSwitch = !!document.getElementById('syncSettings');
+          out.groups = document.querySelectorAll('.sc-group').length;
+          out.adSpeedDisabled = document.getElementById('adSpeed').disabled;
+          out.noShapes = !document.getElementById('shapeSeg');
           return out;
         """)
         ff.frame(None)
@@ -311,7 +402,10 @@ def main():
         check("quick speeds are normalised", r["presets"] == "1, 1.5, 2, 3", r["presets"])
         check("new controls exist (ad speed, opacity, always visible, live)", r["newControls"])
         check("voice pitch option is gone", r["noPitchOption"])
-        check("badge position can be picked in the 4 corners", r["positions"] == 4, r["positions"])
+        check("badge position can be picked in the 4 corners (16:9 preview only)", r["positions"] == 4 and r["noShapes"], r)
+        check("sync switch exists", r["syncSwitch"])
+        check("shortcuts are listed in groups", r["groups"] >= 3, r["groups"])
+        check("the ad speed field is disabled while its switch is off", r["adSpeedDisabled"], r)
         check("live and badge shortcuts are offered", "goLive" in r["actions"] and "toggleAlways" in r["actions"], r["actions"])
 
         # ------------------------------------------------------------------ popup

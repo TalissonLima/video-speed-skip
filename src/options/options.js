@@ -206,14 +206,23 @@
     addEventListener("keydown", onKey, true);
   }
 
+  // Shortcuts are listed by kind so a long list stays readable. The order in storage is untouched:
+  // every row keeps its own index.
+  const GROUPS = [
+    ["gSpeed", ["slower", "faster", "setSpeed", "hold", "toggle"]],
+    ["gSeek", ["rewind", "forward", "goLive"]],
+    ["gOther", ["toggleAlways", "toggleSkip", "toggleSite"]]
+  ];
+
   function renderShortcuts() {
     const box = $("#sc");
     box.textContent = "";
     const counts = {};
     cfg.shortcuts.forEach((s) => { if (s.code) counts[ui.combo(s)] = (counts[ui.combo(s)] || 0) + 1; });
 
-    cfg.shortcuts.forEach((s, i) => {
+    const buildRow = (s, i) => {
       const wrap = el("div", "sc-row");
+      wrap.dataset.index = i;
       const row = el("div", "sc");
 
       const key = el("button", "keybtn" + (counts[ui.combo(s)] > 1 ? " dup" : ""), ui.combo(s));
@@ -245,15 +254,27 @@
 
       row.append(key, sel, group, del);
       wrap.append(row, el("div", "sc-hint", t(ACTIONS[s.action][1])));
-      box.append(wrap);
-    });
+      return wrap;
+    };
+
+    const placed = new Set();
+    for (const [labelKey, actions] of GROUPS) {
+      const indexes = cfg.shortcuts.map((_, i) => i).filter((i) => actions.includes(cfg.shortcuts[i].action));
+      if (!indexes.length) continue;
+      box.append(el("div", "sc-group", t(labelKey)));
+      for (const i of indexes) { box.append(buildRow(cfg.shortcuts[i], i)); placed.add(i); }
+    }
+    cfg.shortcuts.forEach((s, i) => { if (!placed.has(i)) box.append(buildRow(s, i)); });
   }
 
   $("#addSc").onclick = () => {
     cfg.shortcuts.push({ action: "setSpeed", value: 2, code: "", label: "", ctrl: false, alt: false, shift: false });
     saveShortcuts();
     renderShortcuts();
-    $("#sc").lastElementChild?.querySelector(".keybtn").click(); // go straight to "press a key"
+    // go straight to "press a key" on the new row (it sits inside its group, not at the end)
+    const added = $(`#sc [data-index="${cfg.shortcuts.length - 1}"]`);
+    added?.scrollIntoView({ block: "center" });
+    added?.querySelector(".keybtn").click();
   };
   $("#restoreSc").onclick = () => {
     cfg.shortcuts = structuredClone(VSS.DEFAULT_SHORTCUTS);
@@ -335,11 +356,18 @@
   numberSetting("adSpeed", "adSpeed", MIN, MAX);
   numberSetting("liveSpeed", "liveCatchUpSpeed", 1.05, 2);
 
+  function syncDependents() {
+    $("#adSpeed").disabled = !cfg.adNormalSpeed;
+    $("#liveSpeed").disabled = !cfg.liveCatchUp;
+    $$("#appearance .dep").forEach((e) => e.classList.toggle("dim", !cfg.overlay));
+  }
+
   for (const key of ["autoSkip", "skipIntro", "adNormalSpeed", "liveCatchUp", "overlay", "overlayAlways"]) {
     const box = $("#" + key);
     box.checked = cfg[key];
-    box.onchange = () => save({ [key]: box.checked });
+    box.onchange = () => { save({ [key]: box.checked }); syncDependents(); };
   }
+  syncDependents();
 
   /* ================================================================== *
    * Appearance
@@ -366,12 +394,6 @@
   $("#overlay").addEventListener("change", renderAppearance);
   $("#overlayOpacity").oninput = (e) => { save({ overlayOpacity: Number(e.target.value) / 100 }, true); renderAppearance(); };
   $("#overlayOpacity").onchange = () => toast();
-  $$("#shapeSeg button").forEach((b) => {   // preview only: how the positions look on a vertical video
-    b.onclick = () => {
-      $("#screen").classList.toggle("vertical", b.dataset.shape === "v");
-      $$("#shapeSeg button").forEach((x) => x.classList.toggle("on", x === b));
-    };
-  });
   $$("#langSeg button").forEach((b) => {
     b.onclick = () => { lang = b.dataset.lang; save({ lang }, true); renderAll(); toast(); };
   });
@@ -379,9 +401,7 @@
   /* ================================================================== *
    * Data: backup / restore / reset
    * ================================================================== */
-  const EXPORT_KEYS = ["speed", "speedScope", "siteSpeeds", "presets", "shortcuts", "overlay", "overlayPos",
-    "overlaySize", "overlayOpacity", "overlayAlways", "autoSkip", "skipIntro", "adNormalSpeed", "adSpeed",
-    "liveCatchUp", "liveCatchUpSpeed", "lang", "disabledSites"];
+  const EXPORT_KEYS = VSS.SETTING_KEYS; // the same settings that sync uses (no statistics)
   const ENUMS = {
     speedScope: ["site", "global"], overlaySize: ["s", "m", "l"], lang: ["auto", ...ui.LANGS],
     overlayPos: ["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]
@@ -443,6 +463,21 @@
       $("#importMsg").textContent = t("invalidSettings");
     }
   };
+  // Sync settings through the browser's own sync (opt-in).
+  $("#syncSettings").checked = !!cfg.syncSettings;
+  $("#syncSettings").onchange = async (e) => {
+    const box = e.target, want = box.checked;
+    try {
+      const mode = await VSS.setSync(want);
+      cfg.syncSettings = want;
+      if (mode === "pulled") { toast(t("syncPulled")); setTimeout(() => location.reload(), 900); }
+      else toast();
+    } catch {
+      box.checked = !want;
+      toast(t("syncFailed"));
+    }
+  };
+
   confirmable($("#resetAll"), "resetAll", async () => {
     await api.storage.local.remove(EXPORT_KEYS);
     location.reload();

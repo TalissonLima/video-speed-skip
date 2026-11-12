@@ -86,7 +86,13 @@ label.field { cursor: pointer; }
 /* shortcut editor */
 .scs { display: grid; gap: 2px; padding: 8px 16px; }
 .sc-row { padding: 10px 0; border-top: 1px solid var(--line); }
-.sc-row:first-child { border-top: 0; }
+.sc-row:first-child, .sc-group + .sc-row { border-top: 0; }
+.sc-group { padding: 16px 0 2px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.sc-group:first-child { padding-top: 6px; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.note { margin: -12px 0 16px; color: var(--muted); font-size: 12.5px; }
+.dim { opacity: .45; pointer-events: none; }
+input:disabled { opacity: .5; }
 .sc { display: grid; grid-template-columns: 110px minmax(150px, 1fr) auto 34px; align-items: center; gap: 10px; }
 .sc-hint { margin: 4px 0 0 120px; color: var(--muted); font-size: 12px; }
 .keybtn { height: 32px; border-radius: 9px; border: 1px solid var(--line); background: var(--chip); color: var(--text); font: 600 12.5px/1 ui-monospace, monospace; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px; }
@@ -105,8 +111,6 @@ label.field { cursor: pointer; }
 .screen [data-pos=ml] { top: 50%; left: 8px; transform: translateY(-50%); }
 .screen [data-pos=mr] { top: 50%; right: 8px; transform: translateY(-50%); }
 .screen [data-pos=mc] { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.screen.vertical { width: 135px; aspect-ratio: 9 / 16; }
-.shapes { margin-top: 10px; }
 .screen .badge { position: absolute; pointer-events: none; font-weight: 700; color: #fff; background: rgba(17,17,27,.9); padding: .55em .8em; border-radius: .7em; border: 1px solid rgba(255,255,255,.18); line-height: 1; }
 
 textarea { width: 100%; height: auto; padding: 8px; font: 12px/1.4 ui-monospace, monospace; resize: vertical; margin: 4px 0 10px; }
