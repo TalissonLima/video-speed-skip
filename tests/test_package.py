@@ -105,11 +105,7 @@ class Package(unittest.TestCase):
         self.assertEqual(size(store / "promo" / "opera-300x188.png"), (300, 188))
         self.assertEqual(len(list((store / "screenshots").rglob("*.png"))), 12)
         self.assertEqual(size(store / "promo" / "logo-300x300.png"), (300, 300))
-        opera = list((store / "screenshots-opera").rglob("*.png"))
-        self.assertEqual(len(opera), 4)
-        for shot in opera:
-            w, h = size(shot)
-            self.assertTrue(w <= 800 and h <= 600, (shot.name, w, h))
+        self.assertEqual(size(store / "promo" / "icon-64x64.png"), (64, 64))
 
     def test_no_remote_code_or_network_in_the_package(self):
         for f in (DIST / "chrome").rglob("*.js"):

@@ -105,13 +105,6 @@ def main():
         time.sleep(0.5)
         ff.shot_element("#logo", promo / "logo-300x300.png")
         print(f"promo tiles and logo -> {promo.relative_to(ROOT)}")
-
-        opera = OUT.parent / "screenshots-opera" / "en"
-        opera.mkdir(parents=True, exist_ok=True)
-        ff.ext_run(SAMPLE.replace("__LANG__", "en"))
-        popup_scene(ff, "en", opera / "01-popup.png", scale=0.625)
-        options_scenes(ff, opera, scale=0.625)
-        print(f"opera: 4 screenshots (800x500) -> {opera.relative_to(ROOT)}")
     finally:
         ff.quit()
         server.shutdown()

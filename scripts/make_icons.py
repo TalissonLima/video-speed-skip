@@ -46,8 +46,15 @@ def render(size):
     return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0))
             + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
 
-out = pathlib.Path(__file__).resolve().parent.parent / "src" / "icons"
+root = pathlib.Path(__file__).resolve().parent.parent
+out = root / "src" / "icons"
 out.mkdir(parents=True, exist_ok=True)
 for s in (16, 32, 48, 128):
     (out / f"icon-{s}.png").write_bytes(render(s))
     print("wrote", f"icon-{s}.png")
+
+# Store-only icon (Opera Add-ons asks for 64x64). It is not part of the package, so it lives with the store assets.
+promo = root / "docs" / "store" / "promo"
+promo.mkdir(parents=True, exist_ok=True)
+(promo / "icon-64x64.png").write_bytes(render(64))
+print("wrote docs/store/promo/icon-64x64.png")
