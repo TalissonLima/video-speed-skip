@@ -14,7 +14,7 @@ Chrome + Firefox extension (Manifest V3, **vanilla JS/CSS/HTML, zero dependencie
 - **Settings sync** (opt-in, off by default) — your settings follow you through the browser's own sync (Chrome Sync / Firefox Sync); statistics never sync
 - **Light on the browser** — idle until a page actually has a video; also finds videos inside shadow-DOM players
 
-Keyboard shortcuts are **fully configurable** in the options page: pick any key (with Ctrl/Alt/Shift if you like),
+Keyboard shortcuts are **fully configurable** in the options page (drag the handle to reorder them): pick any key (with Ctrl/Alt/Shift if you like),
 an action and its value. Actions: slower, faster, set speed, **hold** (temporary speed while the key is down),
 **toggle** (jump to a speed, press again to go back), ad skip on/off, **pause on this site**, always-visible badge on/off,
 **jump to live**, rewind, forward. Defaults:

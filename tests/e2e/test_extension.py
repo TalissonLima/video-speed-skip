@@ -389,7 +389,6 @@ def main():
           out.noPitchOption = !document.getElementById('preservePitch');
           out.positions = document.querySelectorAll('#screen [data-pos]').length;
           out.syncSwitch = !!document.getElementById('syncSettings');
-          out.groups = document.querySelectorAll('.sc-group').length;
           out.adSpeedDisabled = document.getElementById('adSpeed').disabled;
           out.noShapes = !document.getElementById('shapeSeg');
           return out;
@@ -404,9 +403,49 @@ def main():
         check("voice pitch option is gone", r["noPitchOption"])
         check("badge position can be picked in the 4 corners (16:9 preview only)", r["positions"] == 4 and r["noShapes"], r)
         check("sync switch exists", r["syncSwitch"])
-        check("shortcuts are listed in groups", r["groups"] >= 3, r["groups"])
         check("the ad speed field is disabled while its switch is off", r["adSpeedDisabled"], r)
         check("live and badge shortcuts are offered", "goLive" in r["actions"] and "toggleAlways" in r["actions"], r["actions"])
+
+        # ------------------------------------------------------------------ reorder shortcuts + confirmation dialog
+        print("Options page: reordering and confirmation")
+        seed_defaults = "await browser.storage.local.clear();"
+        ff.ext_run(seed_defaults)
+        ff.open_ext("options/options.html", 1100, 800)
+        r = ff.run(PRELUDE + """
+          document.querySelector('[data-nav="shortcuts"]').click(); await sleep(150);
+          const order = () => [...document.querySelectorAll('#sc .keybtn')].map((b) => b.textContent);
+          const rows = () => [...document.querySelectorAll('#sc .sc-row')];
+          const out = {start: order().slice(0, 4), count: order().length};      // A D R H ...
+          // keyboard: the handle of the 3rd row (R) + ArrowUp
+          document.querySelector('#sc [data-index="2"] .grip').dispatchEvent(
+            new KeyboardEvent('keydown', {key: 'ArrowUp', bubbles: true, cancelable: true}));
+          await sleep(150); out.afterKey = order().slice(0, 4);                  // A R D H
+          // mouse: drag the first row (A) and drop it after the 3rd (D)
+          const dt = new DataTransfer();
+          rows()[0].dispatchEvent(new DragEvent('dragstart', {bubbles: true, dataTransfer: dt}));
+          const target = rows()[2], box = target.getBoundingClientRect();
+          target.dispatchEvent(new DragEvent('dragover', {bubbles: true, cancelable: true, dataTransfer: dt, clientY: box.bottom - 2}));
+          target.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: dt, clientY: box.bottom - 2}));
+          await sleep(200); out.afterDrop = order().slice(0, 4);                 // R D A H
+          out.saved = (await browser.storage.local.get('shortcuts')).shortcuts.map((s) => s.code).slice(0, 4);
+          // "Restore defaults" asks first
+          const dialog = document.getElementById('confirm');
+          document.getElementById('restoreSc').click(); await sleep(200); out.asked = dialog.open;
+          document.getElementById('confirmNo').click(); await sleep(200);
+          out.stayed = !dialog.open && order().slice(0, 4).join() === out.afterDrop.join();
+          document.getElementById('restoreSc').click(); await sleep(200);
+          document.getElementById('confirmYes').click(); await sleep(300);
+          out.restored = order().slice(0, 4); out.restoredCount = order().length;
+          return out;
+        """)
+        ff.frame(None)
+        check("shortcuts are one list (no group headings)", r["count"] == 12 and r["start"] == ["A", "D", "R", "H"], r)
+        check("handle + arrow key moves a shortcut", r["afterKey"] == ["A", "R", "D", "H"], r["afterKey"])
+        check("dragging a shortcut reorders it", r["afterDrop"] == ["R", "D", "A", "H"], r["afterDrop"])
+        check("the new order is saved", r["saved"] == ["KeyR", "KeyD", "KeyA", "KeyH"], r["saved"])
+        check("restore defaults asks for confirmation", r["asked"], r)
+        check("cancelling the dialog changes nothing", r["stayed"], r)
+        check("confirming restores the defaults", r["restored"] == ["A", "D", "R", "H"] and r["restoredCount"] == 12, r)
 
         # ------------------------------------------------------------------ popup
         print("Popup")
@@ -418,8 +457,8 @@ def main():
                   height: document.body.offsetHeight, hasGear: !!q('#gear'), tip: q('#tip').textContent.length > 0};
         """)
         ff.frame(None)
-        # the options step above saved the presets "1, 1.5, 2, 3", so the popup shows 4 quick speeds
-        check("popup renders chips, gear and shortcut tip", r["chips"] == 4 and r["hasGear"] and r["tip"], r)
+        # the step before cleared the storage, so the popup shows the 5 default quick speeds
+        check("popup renders chips, gear and shortcut tip", r["chips"] == 5 and r["hasGear"] and r["tip"], r)
         check("popup fits the 600px browser limit", r["height"] <= 600, r["height"])
     finally:
         ff.quit()

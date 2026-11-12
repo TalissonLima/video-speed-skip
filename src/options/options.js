@@ -47,22 +47,22 @@
     if (!quiet) toast();
   }
 
-  // Two-step button: the first click asks for confirmation, the second runs the action.
-  function confirmable(btn, labelKey, action) {
-    let armed = false, timer;
-    btn.onclick = () => {
-      if (!armed) {
-        armed = true;
-        btn.textContent = t("confirmClick");
-        timer = setTimeout(() => { armed = false; btn.textContent = t(labelKey); }, 3000);
-        return;
-      }
-      clearTimeout(timer);
-      armed = false;
-      btn.textContent = t(labelKey);
-      action();
-    };
+  // Asks before a destructive action, in a real dialog (Esc or "Cancel" does nothing).
+  function ask(textKey, yesKey) {
+    return new Promise((resolve) => {
+      const dialog = $("#confirm");
+      $("#confirmText").textContent = t(textKey);
+      $("#confirmYes").textContent = t(yesKey);
+      $("#confirmNo").textContent = t("cancel");
+      dialog.returnValue = "";
+      dialog.addEventListener("close", () => resolve(dialog.returnValue === "ok"), { once: true });
+      dialog.showModal();
+      $("#confirmNo").focus(); // the safe choice is the default one
+    });
   }
+  const confirmable = (btn, labelKey, textKey, action) => {
+    btn.onclick = async () => { if (await ask(textKey, labelKey)) action(); };
+  };
 
   /* ---- navigation (hash based) ---- */
   const SECTIONS = ["dashboard", "shortcuts", "speed", "skip", "appearance", "data"];
@@ -168,7 +168,7 @@
 
   $$("#metricSeg button").forEach((b) => (b.onclick = () => { metric = b.dataset.metric; renderDashboard(); }));
   $$("#rangeSeg button").forEach((b) => (b.onclick = () => { range = Number(b.dataset.range); renderDashboard(); }));
-  confirmable($("#resetStats"), "resetStats", () => {
+  confirmable($("#resetStats"), "resetStats", "confirmStats", () => {
     save({ stats: { daily: {}, sites: {} }, savedSeconds: 0, skipCount: 0 });
     renderDashboard();
   });
@@ -206,13 +206,19 @@
     addEventListener("keydown", onKey, true);
   }
 
-  // Shortcuts are listed by kind so a long list stays readable. The order in storage is untouched:
-  // every row keeps its own index.
-  const GROUPS = [
-    ["gSpeed", ["slower", "faster", "setSpeed", "hold", "toggle"]],
-    ["gSeek", ["rewind", "forward", "goLive"]],
-    ["gOther", ["toggleAlways", "toggleSkip", "toggleSite"]]
-  ];
+  // The list keeps the order the user gives it (when two shortcuts share a key, the first one wins).
+  // Reorder by dragging the handle, or focus it and press the up / down arrow keys.
+  const GRIP = '<svg viewBox="0 0 12 16" aria-hidden="true"><circle cx="3" cy="3" r="1.3"/><circle cx="9" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="9" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="9" cy="13" r="1.3"/></svg>';
+  let dragFrom = null;
+
+  function moveShortcut(from, to) { // `to` is the final position
+    if (from === to || to < 0 || to >= cfg.shortcuts.length) return;
+    const [item] = cfg.shortcuts.splice(from, 1);
+    cfg.shortcuts.splice(to, 0, item);
+    saveShortcuts();
+    renderShortcuts();
+    $(`#sc [data-index="${to}"] .grip`)?.focus();
+  }
 
   function renderShortcuts() {
     const box = $("#sc");
@@ -220,10 +226,48 @@
     const counts = {};
     cfg.shortcuts.forEach((s) => { if (s.code) counts[ui.combo(s)] = (counts[ui.combo(s)] || 0) + 1; });
 
-    const buildRow = (s, i) => {
+    cfg.shortcuts.forEach((s, i) => {
       const wrap = el("div", "sc-row");
       wrap.dataset.index = i;
       const row = el("div", "sc");
+
+      const grip = el("button", "grip");
+      grip.innerHTML = GRIP;
+      grip.title = t("moveShortcut");
+      grip.setAttribute("aria-label", t("moveShortcut"));
+      grip.onmousedown = () => { wrap.draggable = true; };   // only the handle starts a drag, not the fields
+      grip.onkeydown = (e) => {
+        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        moveShortcut(i, i + (e.key === "ArrowUp" ? -1 : 1));
+      };
+      const after = (e) => { const r = wrap.getBoundingClientRect(); return e.clientY > r.top + r.height / 2; };
+      wrap.ondragstart = (e) => {
+        dragFrom = i;
+        wrap.classList.add("dragging");
+        if (e.dataTransfer) { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(i)); }
+      };
+      wrap.ondragend = () => {
+        dragFrom = null;
+        wrap.draggable = false;
+        $$("#sc .dragging, #sc .drop-before, #sc .drop-after").forEach((x) => x.classList.remove("dragging", "drop-before", "drop-after"));
+      };
+      wrap.ondragover = (e) => {
+        if (dragFrom === null) return;
+        e.preventDefault();
+        wrap.classList.toggle("drop-after", after(e));
+        wrap.classList.toggle("drop-before", !after(e));
+      };
+      wrap.ondragleave = () => wrap.classList.remove("drop-before", "drop-after");
+      wrap.ondrop = (e) => {
+        if (dragFrom === null) return;
+        e.preventDefault();
+        let to = i + (after(e) ? 1 : 0);
+        if (dragFrom < to) to -= 1; // the dragged row leaves its old place first
+        const from = dragFrom;
+        dragFrom = null;
+        moveShortcut(from, to);
+      };
 
       const key = el("button", "keybtn" + (counts[ui.combo(s)] > 1 ? " dup" : ""), ui.combo(s));
       key.onclick = () => captureKey(i, key);
@@ -252,19 +296,10 @@
 
       const del = removeButton(() => { cfg.shortcuts.splice(i, 1); saveShortcuts(); renderShortcuts(); });
 
-      row.append(key, sel, group, del);
+      row.append(grip, key, sel, group, del);
       wrap.append(row, el("div", "sc-hint", t(ACTIONS[s.action][1])));
-      return wrap;
-    };
-
-    const placed = new Set();
-    for (const [labelKey, actions] of GROUPS) {
-      const indexes = cfg.shortcuts.map((_, i) => i).filter((i) => actions.includes(cfg.shortcuts[i].action));
-      if (!indexes.length) continue;
-      box.append(el("div", "sc-group", t(labelKey)));
-      for (const i of indexes) { box.append(buildRow(cfg.shortcuts[i], i)); placed.add(i); }
-    }
-    cfg.shortcuts.forEach((s, i) => { if (!placed.has(i)) box.append(buildRow(s, i)); });
+      box.append(wrap);
+    });
   }
 
   $("#addSc").onclick = () => {
@@ -276,11 +311,11 @@
     added?.scrollIntoView({ block: "center" });
     added?.querySelector(".keybtn").click();
   };
-  $("#restoreSc").onclick = () => {
+  confirmable($("#restoreSc"), "restoreDefaults", "confirmRestore", () => {
     cfg.shortcuts = structuredClone(VSS.DEFAULT_SHORTCUTS);
     saveShortcuts();
     renderShortcuts();
-  };
+  });
 
   /* ================================================================== *
    * Speed
@@ -325,7 +360,7 @@
     if (list.length) save({ presets: list });
     renderSpeed(); // normalises what the user typed (or restores it if it was invalid)
   };
-  confirmable($("#clearSites"), "clearAll", () => { save({ siteSpeeds: {} }); renderSpeed(); });
+  confirmable($("#clearSites"), "clearAll", "confirmSites", () => { save({ siteSpeeds: {} }); renderSpeed(); });
 
   /* ================================================================== *
    * Skipping
@@ -478,7 +513,7 @@
     }
   };
 
-  confirmable($("#resetAll"), "resetAll", async () => {
+  confirmable($("#resetAll"), "resetAll", "confirmAll", async () => {
     await api.storage.local.remove(EXPORT_KEYS);
     location.reload();
   });

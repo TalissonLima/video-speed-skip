@@ -104,7 +104,8 @@
     MAX: 16,
 
     async load() {
-      const cfg = { ...DEFAULTS, ...(await api.storage.local.get(null)) };
+      // a copy: pages edit lists in place (reorder, remove), which must never change the defaults themselves
+      const cfg = { ...structuredClone(DEFAULTS), ...(await api.storage.local.get(null)) };
       cfg.stats = { daily: {}, sites: {}, ...cfg.stats };
       syncOn = !!cfg.syncSettings;
       if (signature(cfg.shortcuts) === signature(LEGACY_SHORTCUTS)) {

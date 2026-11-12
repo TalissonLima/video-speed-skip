@@ -69,7 +69,6 @@
     <section id="shortcuts" data-section hidden>
       <h2 data-i18n="scTitle"></h2>
       <p class="sub" data-i18n="scSubtitle"></p>
-      <p class="note" data-i18n="scTip"></p>
       <div class="toolbar">
         <button id="addSc" class="btn accent" data-i18n="addShortcut"></button>
         <button id="restoreSc" class="link muted" data-i18n="restoreDefaults"></button>
@@ -99,7 +98,7 @@
 
       <div class="panel">
         <div class="panel-head">
-          <div><h3 data-i18n="savedSites"></h3><small class="muted-text" data-i18n="savedSitesDesc"></small></div>
+          <h3 data-i18n="savedSites"></h3>
           <button id="clearSites" class="link muted" data-i18n="clearAll"></button>
         </div>
         <div id="siteList" class="list"></div>
@@ -144,7 +143,6 @@
 
       <div class="panel">
         <h3 data-i18n="pausedSites"></h3>
-        <small class="muted-text" data-i18n="pausedSitesDesc"></small>
         <div id="pausedList" class="list"></div>
       </div>
     </section>
@@ -255,6 +253,15 @@
     </section>
   </main>
 </div>
+<dialog id="confirm">
+  <form method="dialog">
+    <p id="confirmText"></p>
+    <div class="dialog-actions">
+      <button id="confirmNo" class="btn" value="cancel"></button>
+      <button id="confirmYes" class="btn accent" value="ok"></button>
+    </div>
+  </form>
+</dialog>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="../shared/defaults.js"></script>
