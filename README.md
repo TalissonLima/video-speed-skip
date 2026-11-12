@@ -84,7 +84,7 @@ The end-to-end test needs Firefox and `geckodriver` already installed (the Firef
 2. Tag it: `git tag v0.4.0 && git push --tags`.
 3. GitHub Actions runs the tests, builds the packages and attaches both zips to a GitHub release.
 4. Upload the zips to the Chrome Web Store and Firefox Add-ons. Text, permission justifications and screenshots are in
-   [`docs/store/`](docs/store/listing.md); the step-by-step is in [`docs/store/publish-checklist.md`](docs/store/publish-checklist.md).
+   [`docs/store/`](docs/store/listing.md).
 
 ## Privacy
 
