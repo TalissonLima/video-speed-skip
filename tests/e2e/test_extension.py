@@ -97,10 +97,14 @@ def main():
           v.playbackRate = 1; await sleep(300);
           v.play(); await sleep(400);
           out.resumed = v.playbackRate;
+          v.addEventListener('seeked', () => { v.playbackRate = 1; });
+          v.dispatchEvent(new Event('seeked')); await sleep(300);
+          out.afterSeek = v.playbackRate;
           return out;
         """)
         check("speed set to 1.5x", approx(r["set"], 1.5), r)
         check("a reset to 1x on pause is undone on resume", approx(r["resumed"], 1.5), r)
+        check("a reset to 1x on seek is undone", approx(r["afterSeek"], 1.5), r)
 
         print("Content script: pause shortcut and ads at normal speed")
         r = ff.run(PRELUDE + """
