@@ -199,12 +199,21 @@
     applySpeed(e.target);
   }
 
+  let rateQuietUntil = 0;
+  const quietRates = () => { rateQuietUntil = Date.now() + 1000; };
+
   function onPlay(e) {
     if (!isVideo(e)) return;
     if (!active) activate();
     syncAd();
+    quietRates();
     activeVideo = e.target;
     applySpeed(e.target);
+  }
+
+  function onPause(e) {
+    if (!isVideo(e)) return;
+    quietRates();
   }
 
   function onRate(e) {
@@ -213,13 +222,14 @@
     syncAd();
     if (v.__vssSetting) { v.__vssSetting = false; return; }
     if (!enabled() || tempSpeed !== null || near(v.playbackRate, speedNow())) return;
-    if (adPlaying() || Date.now() - adChangedAt < 1500 || Date.now() - (v.__vssLoadedAt ?? 0) < 1500) applySpeed(v);
+    if (adPlaying() || Date.now() - adChangedAt < 1500 || Date.now() - (v.__vssLoadedAt ?? 0) < 1500 || Date.now() < rateQuietUntil) applySpeed(v);
     else persist(clamp(v.playbackRate));
   }
 
   function listen(target) {
     for (const type of ["loadstart", "emptied", "loadedmetadata"]) target.addEventListener(type, onLoad, true);
     for (const type of ["play", "playing"]) target.addEventListener(type, onPlay, true);
+    target.addEventListener("pause", onPause, true);
     target.addEventListener("ratechange", onRate, true);
   }
 
