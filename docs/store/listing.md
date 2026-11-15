@@ -158,6 +158,10 @@ Suggested captions:
 3. **Shortcuts:** "Your keys, your speeds"
 4. **Speed:** "Each site remembers its speed"
 
+## Release notes (1.0.1)
+
+- Fixed: on some sites (Crunchyroll, for example), the speed went back to 1× when a video was paused. It now stays at the speed you set.
+
 ## Release notes (1.0.0)
 
 - First public release.

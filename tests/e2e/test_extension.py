@@ -87,6 +87,25 @@ def main():
         check("toggle: jumps to 2x and back", approx(r["toggleOn"], 2) and approx(r["toggleOff"], r["base"]), r)
         check("X pressed twice moves forward ~20s", r["forward"] > 15, r["forward"])
 
+        print("Content script: player resets speed on pause and resume")
+        r = ff.run(PRELUDE + """
+          const v = document.getElementById('v'); const out = {};
+          kd('KeyR'); await sleep(150);
+          for (let i = 0; i < 5; i++) { kd('KeyD'); await sleep(60); }
+          await sleep(200); out.set = v.playbackRate;
+          v.pause(); await sleep(100);
+          v.playbackRate = 1; await sleep(300);
+          v.play(); await sleep(400);
+          out.resumed = v.playbackRate;
+          v.addEventListener('seeked', () => { v.playbackRate = 1; });
+          v.dispatchEvent(new Event('seeked')); await sleep(300);
+          out.afterSeek = v.playbackRate;
+          return out;
+        """)
+        check("speed set to 1.5x", approx(r["set"], 1.5), r)
+        check("a reset to 1x on pause is undone on resume", approx(r["resumed"], 1.5), r)
+        check("a reset to 1x on seek is undone", approx(r["afterSeek"], 1.5), r)
+
         print("Content script: pause shortcut and ads at normal speed")
         r = ff.run(PRELUDE + """
           const v = document.getElementById('v'); const out = {};

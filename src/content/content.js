@@ -10,7 +10,6 @@
   let beforeToggle = null;
   let active = false;
   let lastAd = false;
-  let adChangedAt = 0;
   let liveBoost = null;
 
   let cachedHost;
@@ -38,7 +37,6 @@
     const ad = adPlaying();
     if (ad === lastAd) return;
     lastAd = ad;
-    adChangedAt = Date.now();
     applyAll();
   }
 
@@ -195,7 +193,6 @@
     if (!isVideo(e)) return;
     if (!active) activate();
     syncAd();
-    e.target.__vssLoadedAt = Date.now();
     applySpeed(e.target);
   }
 
@@ -212,9 +209,8 @@
     if (!(v instanceof HTMLVideoElement)) return;
     syncAd();
     if (v.__vssSetting) { v.__vssSetting = false; return; }
-    if (!enabled() || tempSpeed !== null || near(v.playbackRate, speedNow())) return;
-    if (adPlaying() || Date.now() - adChangedAt < 1500 || Date.now() - (v.__vssLoadedAt ?? 0) < 1500) applySpeed(v);
-    else persist(clamp(v.playbackRate));
+    if (!enabled() || tempSpeed !== null) return;
+    applySpeed(v);
   }
 
   function listen(target) {
